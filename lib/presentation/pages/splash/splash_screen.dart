@@ -10,19 +10,26 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  late AnimationController _textController;
+  double _logoOffset = -200.0;
+  double _logoOpacity = 0.0;
+
+
+  static const Duration _logoBounceDuration = Duration(milliseconds: 1200);
+  // Total durasi sebelum navigasi
+  static const Duration _navigationDelay = Duration(milliseconds: 1800);
 
   @override
   void initState() {
     super.initState();
-    _textController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-    _textController.forward();
+    Future.delayed(const Duration(milliseconds: 300), () {
+      setState(() {
+        _logoOffset = 0.0;
+        _logoOpacity = 1.0;
+      });
+    });
 
-    // delay → navigasi ke login
-    Future.delayed(const Duration(seconds: 3), () {
+
+    Future.delayed(_navigationDelay, () {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => const PilihanLogin(),
@@ -33,45 +40,37 @@ class _SplashScreenState extends State<SplashScreen>
         ),
       );
     });
+
   }
 
   @override
   void dispose() {
-    _textController.dispose();
+    // Jika _textController tidak dihapus dari State, pastikan ini ada.
+    // Jika sudah dihapus dari State, baris ini bisa dihilangkan.
+    // _textController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Hapus backgroundColor dari Scaffold
-      body: Container(
-        // Gunakan Container untuk latar belakang gradien
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color.fromARGB(255, 222, 229, 233),
-              Color.fromARGB(255, 232, 241, 245),
-              Color.fromARGB(255, 193, 207, 213),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Hero(
-                tag: "app_logo",
-                child: Image.asset(
-                  "assets/images/logo.png",
-                  width: 400,
-                  height: 400,
-                ),
+      backgroundColor: const Color(0xFFF8FFF2),
+      body: Center(
+        child: AnimatedOpacity(
+          opacity: _logoOpacity,
+          duration: const Duration(milliseconds: 300),
+          child: AnimatedContainer(
+            duration: _logoBounceDuration,
+            curve: Curves.bounceOut,
+            transform: Matrix4.translationValues(0.0, _logoOffset, 0.0),
+            child: Hero(
+              tag: "app_logo",
+              child: Image.asset(
+                "assets/images/logo.png",
+                width: 400,
+                height: 400,
               ),
-              const SizedBox(height: 10),
-            ],
+            ),
           ),
         ),
       ),
