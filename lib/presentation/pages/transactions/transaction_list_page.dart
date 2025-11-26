@@ -27,10 +27,7 @@ class TransactionListPage extends StatelessWidget {
       backgroundColor: primaryColor,
       body: Column(
         children: [
-          // ===================== BAGIAN ATAS (Header & Saldo) =====================
           _HeaderSection(primaryColor: primaryColor, title: categoryName, isIncome: isIncome),
-
-          // ===================== BAGIAN TENGAH (Daftar Transaksi) =====================
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -84,7 +81,6 @@ class TransactionListPage extends StatelessWidget {
           ),
         ],
       ),
-      // ===================== Floating Action Button (Add) =====================
       bottomNavigationBar: Container(
         padding: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
         color: secondaryColor,

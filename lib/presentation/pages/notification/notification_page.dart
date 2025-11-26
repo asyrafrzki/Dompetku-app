@@ -6,18 +6,16 @@ class NotificationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Atur warna latar belakang Scaffold menjadi warna Putih/Krem untuk bagian atas
     return Scaffold(
       backgroundColor: const Color(0xFFF8FFF2),
       body: Column(
         children: [
-          // ===================== HEADER NOTIFICATION (RATA DI BAWAH) ========================= //
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(28, 60, 28, 20),
             decoration: const BoxDecoration(
               color: Color(0xFF07BEB8),
-              // TIDAK ADA RADIUS DI SINI. Biarkan rata.
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -57,23 +55,13 @@ class NotificationPage extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 20),
 
               decoration: const BoxDecoration(
-                color: Color(0xFFF8FFF2), // Warna latar belakang putih/krem
+                color: Color(0xFFF8FFF2),
                 borderRadius: BorderRadius.only(
-                  // Pertahankan radius besar di bagian atas agar Body putih melengkung ke atas
                   topLeft: Radius.circular(53),
                   topRight: Radius.circular(53),
-                  // Tambahkan juga radius di bagian bawah jika Anda ingin terlihat seperti kartu
                   bottomLeft: Radius.circular(53),
                   bottomRight: Radius.circular(53),
                 ),
-                // Tambahkan shadow jika ingin terlihat lebih mengambang (opsional)
-                // boxShadow: [
-                //   BoxShadow(
-                //     color: Colors.black12,
-                //     blurRadius: 10,
-                //     offset: Offset(0, -5),
-                //   ),
-                // ],
               ),
               child: Center(
                 child: Container(

@@ -14,12 +14,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   loading_animation_widget: ^1.2.0
   google_fonts: ^6.2.1
-  firebase_core: ^3.5.0
-  firebase_auth: ^5.3.0
-  cloud_firestore: ^5.4.0
+  firebase_core: ^4.2.1
+  firebase_auth: ^6.1.2
+  cloud_firestore: ^6.1.0
   
   # 📊 Tambahan untuk grafik & kalender
-  fl_chart: ^0.69.0
+  fl_chart: ^0.71.0
   table_calendar: ^3.1.2
 
 dev_dependencies:

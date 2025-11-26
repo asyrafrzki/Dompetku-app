@@ -1,4 +1,3 @@
-// Ganti seluruh isi file edit_profile_page.dart dengan kode ini:
 import 'package:flutter/material.dart';
 
 class EditProfilePage extends StatelessWidget {
@@ -7,26 +6,21 @@ class EditProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF07BEB8);
-    const Color secondaryColor = Color(0xFFF8FFF2); // Background container
+    const Color secondaryColor = Color(0xFFF8FFF2);
 
     return Scaffold(
-      backgroundColor: secondaryColor, // WARNA SCRAFFOLD = WARNA KONTEN UTAMA
+      backgroundColor: secondaryColor,
       body: Column(
         children: [
-          // ===================== BAGIAN 1: Header Lengkung =====================
           _EditProfileHeader(
             context: context,
             primaryColor: primaryColor,
             secondaryColor: secondaryColor,
           ),
-
-          // ===================== BAGIAN 2: Konten Utama (Form) =====================
           Expanded(
             child: Container(
-              // Tidak perlu BoxDecoration atau BorderRadius lagi
               color: secondaryColor,
               child: ListView(
-                // Padding di awal ListView kini lebih sederhana
                 padding: const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 40),
                 children: [
                   const Text(
@@ -86,7 +80,6 @@ class EditProfilePage extends StatelessWidget {
   }
 }
 
-// Widget Baru: Header dengan Lengkungan Bawah
 class _EditProfileHeader extends StatelessWidget {
   final BuildContext context;
   final Color primaryColor;

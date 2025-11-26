@@ -10,7 +10,7 @@ class PilihanLogin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FFF2),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40.0),
@@ -18,7 +18,6 @@ class PilihanLogin extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Spacer(flex: 2),
-
               Hero(
                 tag: "app_logo",
                 child: Image.asset(
@@ -28,28 +27,17 @@ class PilihanLogin extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 20),
-              Text(
-                "Selamat Datang di DompetKu",
-                style: GoogleFonts.poppins(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
               const SizedBox(height: 8),
               Text(
-                "Kelola keuanganmu dengan bijak.",
+                "DompetKu",
                 style: GoogleFonts.poppins(
-                  fontSize: 15,
-                  color: Colors.black54,
+                  fontSize: 42,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF4F6F52),
                 ),
                 textAlign: TextAlign.center,
               ),
-
-              const Spacer(flex: 1),
-
+              const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -58,10 +46,12 @@ class PilihanLogin extends StatelessWidget {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF07AAF0),
+                  // Warna tombol Log In: 07BEB8
+                  backgroundColor: const Color(0xFF07BEB8),
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    // Bentuk bulat
+                    borderRadius: BorderRadius.circular(30),
                   ),
                   elevation: 5,
                   shadowColor: Colors.black.withOpacity(0.2),
@@ -71,12 +61,14 @@ class PilihanLogin extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
 
               const SizedBox(height: 15),
+
+              // Tombol Sign Up (Warna: 07BEB8, Bentuk: Bulat)
               OutlinedButton(
                 onPressed: () {
                   Navigator.push(
@@ -86,17 +78,20 @@ class PilihanLogin extends StatelessWidget {
                 },
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
-                  side: const BorderSide(color: Color(0xFF07AAF0), width: 1.5),
+                  // Border Side: 07BEB8
+                  side: const BorderSide(color: Color(0xFF07BEB8), width: 1.5),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    // Bentuk bulat
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
                 child: Text(
                   "Sign Up",
                   style: GoogleFonts.poppins(
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF07AAF0),
+                    fontWeight: FontWeight.w600,
+                    // Text Color: 07BEB8
+                    color: const Color(0xFF07BEB8),
                   ),
                 ),
               ),

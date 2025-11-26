@@ -32,7 +32,6 @@ class _DashboardContentState extends State<DashboardContent> {
 
     return Column(
       children: [
-        // ===================== HEADER ========================= //
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(28, 60, 28, 40),
@@ -79,15 +78,10 @@ class _DashboardContentState extends State<DashboardContent> {
                 ],
               ),
               const SizedBox(height: 25),
-
-              // ===================== WIDGET INCOME EXPENSE CARD (Perbaikan Error) ===================== //
-              // Menggantikan panggilan ke _incomeBox yang error
               const IncomeExpenseCard(),
             ],
           ),
         ),
-
-        // =================== BODY SCROLL ====================== //
         Expanded(
           child: Container(
             color: const Color(0xFFF8FFF2),
@@ -96,8 +90,6 @@ class _DashboardContentState extends State<DashboardContent> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // ... (Goal Box) ...
-
                   const SizedBox(height: 45),
 
                   Align(
@@ -113,7 +105,6 @@ class _DashboardContentState extends State<DashboardContent> {
 
                   const SizedBox(height: 20),
 
-                  // =================== WIDGET TIME FRAME SELECTOR ====================== //
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
                     decoration: BoxDecoration(
@@ -123,7 +114,6 @@ class _DashboardContentState extends State<DashboardContent> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        // Menggunakan widget TimeFrameButton yang diekstrak
                         TimeFrameButton(
                           text: "Daily",
                           selected: _selectedTab == 0,

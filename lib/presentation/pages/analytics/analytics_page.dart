@@ -1,21 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'dart:math' as math; // <-- Tambahkan impor ini jika BarChartWidget membutuhkannya
-
-// Import widget-widget yang diekstrak (Pastikan jalur ini benar)
+import 'dart:math' as math;
 import 'package:dompetku/presentation/widgets/custom_page_header.dart';
 import 'package:dompetku/presentation/widgets/income_expense_summary.dart';
 import 'package:dompetku/presentation/widgets/bar_chart_widget.dart';
 import 'package:dompetku/presentation/widgets/time_frame_button.dart';
 
-// Jika TimeFrameButton digunakan secara langsung, tambahkan import di sini:
-// import 'package:dompetku/presentation/widgets/time_frame_button.dart';
-
-// Definisi Warna Global (Jika tidak ada file constants.dart)
 const Color primaryColor = Color(0xFF07BEB8);
-const Color secondaryColor = Color(0xFFF8FFF2); // Warna Body Putih/Krem
-
+const Color secondaryColor = Color(0xFFF8FFF2);
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -29,7 +22,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   final double income = 10000.00;
   int _selectedTimeFrame = 0;
 
-  // Data State dan Chart Data (disimpan di state halaman)
+  // Data State dan Chart Data
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   final List<Map<String, dynamic>> chartData = [
@@ -61,15 +54,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header menggunakan widget yang diekstrak
             CustomPageHeader(
               title: "Analysis",
               onBack: () => Navigator.pop(context),
             ),
 
             const SizedBox(height: 30),
-
-            // Time Frame Selector menggunakan widget yang diekstrak
             Container(
               padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
               margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -108,8 +98,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               ),
             ),
 
-
-
             const SizedBox(height: 30),
 
             // Card Utama Analisis
@@ -140,15 +128,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       ),
                     ),
                     const SizedBox(height: 20),
-
-                    // Bar Chart menggunakan widget yang diekstrak
                     SizedBox(
                       height: 200,
                       child: BarChartWidget(data: chartData),
                     ),
                     const SizedBox(height: 40),
-
-                    // Ringkasan Pendapatan/Pengeluaran menggunakan widget yang diekstrak
                     IncomeExpenseSummary(
                       income: income,
                       expense: totalExpense,
