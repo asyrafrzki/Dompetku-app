@@ -1,48 +1,48 @@
 import 'package:flutter/material.dart';
-// Import halaman edit profile
-// JALUR PACKAGE (Jalur yang paling disarankan di Flutter)
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:dompetku/presentation/pages/profile/edit_profile_page.dart';
-// Import dialog konfirmasi logout
 import 'package:dompetku/presentation/widgets/logout_confirmation_dialog.dart';
+import 'package:dompetku/presentation/pages/auth/login_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
+  void _logout(BuildContext context) async {
+    await FirebaseAuth.instance.signOut();
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+          (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF07BEB8);
-    const Color secondaryColor = Color(0xFFF8FFF2); // Background card/container
-
-    // Fungsi untuk menampilkan dialog konfirmasi logout
-    void _showLogoutConfirmation() {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return const LogoutConfirmationDialog();
-        },
-      );
-    }
+    const Color secondaryColor = Color(0xFFF8FFF2);
 
     return Scaffold(
       backgroundColor: primaryColor,
       body: Column(
         children: [
-          // ===================== BAGIAN ATAS (Header & Foto Profil) =====================
-          _ProfileHeader(primaryColor: primaryColor),
+          const _ProfileHeader(primaryColor: primaryColor),
 
           Expanded(
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: secondaryColor,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(50),
                   topRight: Radius.circular(50),
                 ),
               ),
               child: ListView(
-                padding: const EdgeInsets.only(top: 100, left: 20, right: 20),
+                padding:
+                const EdgeInsets.only(top: 100, left: 20, right: 20),
                 children: [
-                  // Item Menu 1: Edit Profile
+                  // ITEM EDIT PROFILE
                   _ProfileMenuItem(
                     icon: Icons.edit_note,
                     title: 'Edit Profile',
@@ -50,30 +50,40 @@ class ProfilePage extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const EditProfilePage()),
+                        MaterialPageRoute(
+                            builder: (_) => const EditProfilePage()),
                       );
                     },
                   ),
                   const SizedBox(height: 20),
 
-                  // Item Menu 2: Logout
+                  // ITEM LOGOUT
                   _ProfileMenuItem(
                     icon: Icons.logout,
                     title: 'Logout',
                     color: primaryColor,
-                    onTap: _showLogoutConfirmation,
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return LogoutConfirmationDialog(
+                            onLogoutConfirmed: () => _logout(context),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ],
               ),
             ),
-          ),
+          )
         ],
       ),
     );
   }
 }
 
-// Widget Header Profile (Biru/Teal)
+// ---------------------- PROFILE HEADER ----------------------
 class _ProfileHeader extends StatelessWidget {
   final Color primaryColor;
 
@@ -81,16 +91,13 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tentukan tinggi header
-    final double headerHeight = MediaQuery.of(context).size.height * 0.35;
+    final double headerHeight =
+        MediaQuery.of(context).size.height * 0.35;
 
     return Container(
       width: double.infinity,
       height: headerHeight,
-      decoration: BoxDecoration(
-        color: primaryColor,
-        // Hapus border radius di sini
-      ),
+      color: primaryColor,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -104,11 +111,9 @@ class _ProfileHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          // Profile Picture Placeholder
           const CircleAvatar(
             radius: 40,
             backgroundColor: Colors.white,
-            // Gunakan Icon atau Placeholder jika tidak menggunakan foto
             child: Icon(Icons.person, size: 50, color: Colors.grey),
           ),
           const SizedBox(height: 5),
@@ -120,14 +125,14 @@ class _ProfileHeader extends StatelessWidget {
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 20), // Padding bawah
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 }
 
-// Widget untuk setiap baris menu (Edit Profile, Logout)
+// ---------------------- PROFILE MENU ITEM ----------------------
 class _ProfileMenuItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -167,7 +172,8 @@ class _ProfileMenuItem extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            const Icon(Icons.arrow_forward_ios,
+                size: 16, color: Colors.grey),
           ],
         ),
       ),

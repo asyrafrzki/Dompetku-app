@@ -6,7 +6,8 @@ import 'package:dompetku/presentation/pages/transactions/transaction_page.dart';
 import 'package:dompetku/presentation/pages/home/dashboard_content.dart';
 // Import widget navbar
 import 'package:dompetku/presentation/widgets/custom_bottom_nav_bar.dart';
-
+import 'package:dompetku/presentation/pages/categories/categories_page.dart';
+import 'package:dompetku/presentation/pages/profile/profile_page.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -21,8 +22,8 @@ class _HomePageState extends State<HomePage> {
     const DashboardContent(), // Konten Dashboard
     const AnalyticsPage(),
     const TransactionsPage(),
-    const Center(child: Text("Categories Page")),
-    const Center(child: Text("Profile Page")),
+    const CategoriesPage(),
+    const ProfilePage(),
   ];
 
   void _onItemTapped(int index) {
@@ -39,6 +40,7 @@ class _HomePageState extends State<HomePage> {
         children: _pages,
       ),
 
+      // ===================== WIDGET BOTTOM NAV BAR ===================== //
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,

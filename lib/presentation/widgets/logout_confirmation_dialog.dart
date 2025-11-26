@@ -14,7 +14,8 @@ class LogoutConfirmationDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      contentPadding: const EdgeInsets.only(top: 30, bottom: 20, left: 20, right: 20),
+      contentPadding: const EdgeInsets.only(
+          top: 30, bottom: 20, left: 20, right: 20),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -32,7 +33,7 @@ class LogoutConfirmationDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Judul
+
           const Text(
             'Logout',
             style: TextStyle(
@@ -42,7 +43,7 @@ class LogoutConfirmationDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          // Pesan
+
           const Text(
             'Are you sure you want to log out?',
             textAlign: TextAlign.center,
@@ -52,11 +53,11 @@ class LogoutConfirmationDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 30),
-          // Tombol Aksi
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              // Tombol Cancel
+              // Cancel
               Expanded(
                 child: SizedBox(
                   height: 40,
@@ -69,20 +70,21 @@ class LogoutConfirmationDialog extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                    child: const Text('Cancel',
+                        style: TextStyle(color: Colors.grey)),
                   ),
                 ),
               ),
               const SizedBox(width: 15),
-              // Tombol Yes, Logout
+
+              // Yes Logout
               Expanded(
                 child: SizedBox(
                   height: 40,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop();
-                      onLogoutConfirmed?.call(); // Panggil callback jika ada
-                      // TODO: Implementasi navigasi ke halaman login/splash
+                      Navigator.of(context).pop(); // tutup dialog
+                      onLogoutConfirmed?.call();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
@@ -93,15 +95,18 @@ class LogoutConfirmationDialog extends StatelessWidget {
                     ),
                     child: const Text(
                       'Yes, Logout',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
-          ),
+          )
         ],
       ),
     );
   }
-}  
+}
