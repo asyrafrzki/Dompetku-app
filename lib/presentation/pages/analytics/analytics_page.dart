@@ -1,7 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'dart:math' as math;
+import 'dart:math' as math; // <-- Tambahkan impor ini jika BarChartWidget membutuhkannya
+
+// Import widget-widget yang diekstrak (Pastikan jalur ini benar)
+import 'package:dompetku/presentation/widgets/custom_page_header.dart';
+import 'package:dompetku/presentation/widgets/income_expense_summary.dart';
+import 'package:dompetku/presentation/widgets/bar_chart_widget.dart';
+import 'package:dompetku/presentation/widgets/time_frame_button.dart';
+
+// Jika TimeFrameButton digunakan secara langsung, tambahkan import di sini:
+// import 'package:dompetku/presentation/widgets/time_frame_button.dart';
+
+// Definisi Warna Global (Jika tidak ada file constants.dart)
+const Color primaryColor = Color(0xFF07BEB8);
+const Color secondaryColor = Color(0xFFF8FFF2); // Warna Body Putih/Krem
+
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -11,41 +25,22 @@ class AnalyticsPage extends StatefulWidget {
 }
 
 class _AnalyticsPageState extends State<AnalyticsPage> {
-  final double totalExpense = 1187.40;
-  final double income = 4120.00;
+  final double totalExpense = 520.00;
+  final double income = 10000.00;
+  int _selectedTimeFrame = 0;
 
-  final List<Map<String, dynamic>> transactions = [
-    {
-      "title": "Groceries",
-      "date": "17:00 - April 24",
-      "category": "Pantry",
-      "amount": -100.00,
-      "isExpense": true,
-      "icon": Icons.shopping_bag,
-      "color": const Color(0xFF06B6D4),
-    },
-    {
-      "title": "Others",
-      "date": "17:00 - April 24",
-      "category": "Payments",
-      "amount": 120.00,
-      "isExpense": false,
-      "icon": Icons.widgets,
-      "color": const Color(0xFF2563EB),
-    },
-    {
-      "title": "Salary",
-      "date": "09:00 - April 23",
-      "category": "Income",
-      "amount": 2500.00,
-      "isExpense": false,
-      "icon": Icons.attach_money,
-      "color": Colors.green,
-    },
-  ];
-
+  // Data State dan Chart Data (disimpan di state halaman)
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  final List<Map<String, dynamic>> chartData = [
+    {'day': 'Mon', 'income': 10.0, 'expense': 5.0},
+    {'day': 'Tue', 'income': 3.0, 'expense': 7.0},
+    {'day': 'Wed', 'income': 12.0, 'expense': 10.0},
+    {'day': 'Thu', 'income': 5.0, 'expense': 4.0},
+    {'day': 'Fri', 'income': 15.0, 'expense': 8.0},
+    {'day': 'Sat', 'income': 2.0, 'expense': 1.0},
+    {'day': 'Sun', 'income': 13.0, 'expense': 6.0},
+  ];
 
   @override
   void initState() {
@@ -53,293 +48,148 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     _selectedDay = _focusedDay;
   }
 
+  void _selectTimeFrame(int index) {
+    setState(() {
+      _selectedTimeFrame = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0EA5E9),
-        title: Text(
-          "Analytics",
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {},
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
-      ),
+      backgroundColor: secondaryColor,
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Container(
-              color: const Color(0xFF0EA5E9),
-              padding: const EdgeInsets.only(bottom: 20),
+            // Header menggunakan widget yang diekstrak
+            CustomPageHeader(
+              title: "Analysis",
+              onBack: () => Navigator.pop(context),
             ),
+
+            const SizedBox(height: 30),
+
+            // Time Frame Selector menggunakan widget yang diekstrak
             Container(
-              color: const Color(0xFFF5F7FA),
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: primaryColor,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildTimeFrameButton("Daily", true),
-                  _buildTimeFrameButton("Weekly", false),
-                  _buildTimeFrameButton("Monthly", false),
-                  _buildTimeFrameButton("Year", false),
+                  TimeFrameButton(
+                    text: "Daily",
+                    selected: _selectedTimeFrame == 0,
+                    onTap: () => _selectTimeFrame(0),
+                  ),
+                  const SizedBox(width: 10),
+                  TimeFrameButton(
+                    text: "Weekly",
+                    selected: _selectedTimeFrame == 1,
+                    onTap: () => _selectTimeFrame(1),
+                  ),
+                  const SizedBox(width: 10),
+                  TimeFrameButton(
+                    text: "Monthly",
+                    selected: _selectedTimeFrame == 2,
+                    onTap: () => _selectTimeFrame(2),
+                  ),
                 ],
               ),
             ),
+
+
+
+            const SizedBox(height: 30),
+
+            // Card Utama Analisis
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Income & Expenses",
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            const Icon(Icons.search, color: Colors.grey),
-                            const SizedBox(width: 10),
-                            IconButton(
-                              icon: const Icon(Icons.calendar_month, color: Colors.grey),
-                              onPressed: () {
-                                _showCalendarDialog(context);
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
+                    Text(
+                      "Income & Expenses",
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 20),
+
+                    // Bar Chart menggunakan widget yang diekstrak
                     SizedBox(
-                      height: 180,
-                      child: LineChart(
-                        data: const [
-                          {'day': 'Mon', 'income': 100.0, 'expense': 50.0},
-                          {'day': 'Tue', 'income': 200.0, 'expense': 120.0},
-                          {'day': 'Wed', 'income': 150.0, 'expense': 80.0},
-                          {'day': 'Thu', 'income': 300.0, 'expense': 150.0},
-                          {'day': 'Fri', 'income': 250.0, 'expense': 110.0},
-                          {'day': 'Sat', 'income': 400.0, 'expense': 200.0},
-                          {'day': 'Sun', 'income': 350.0, 'expense': 180.0},
-                        ],
-                      ),
+                      height: 200,
+                      child: BarChartWidget(data: chartData),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildBottomNavItem(
-                            icon: Icons.arrow_downward,
-                            label: "Income",
-                            amount: income,
-                            isIncome: true,
-                          ),
-                          _buildBottomNavItem(
-                            icon: Icons.arrow_upward,
-                            label: "Expense",
-                            amount: totalExpense,
-                            isIncome: false,
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 40),
+
+                    // Ringkasan Pendapatan/Pengeluaran menggunakan widget yang diekstrak
+                    IncomeExpenseSummary(
+                      income: income,
+                      expense: totalExpense,
                     ),
                   ],
                 ),
               ),
             ),
-            ...transactions.map((tx) {
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: tx["color"],
-                    child: Icon(tx["icon"], color: Colors.white),
-                  ),
-                  title: Text(
-                    tx["title"],
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: Text(
-                    "${tx["date"]} • ${tx["category"]}",
-                    style: GoogleFonts.poppins(color: Colors.grey),
-                  ),
-                  trailing: Text(
-                    "${tx["isExpense"] ? '-' : '+'}\$${tx["amount"].abs().toStringAsFixed(2)}",
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      color: tx["isExpense"] ? Colors.red : Colors.green,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
           ],
         ),
       ),
-      // Removed the redundant BottomAppBar
     );
   }
 
-  Widget _buildTimeFrameButton(String text, bool isSelected) {
-    return Expanded(
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0EA5E9) : Colors.transparent,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Text(
-          text,
-          style: GoogleFonts.poppins(
-            color: isSelected ? Colors.white : Colors.black54,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem({
-    required IconData icon,
-    required String label,
-    required double amount,
-    required bool isIncome,
-  }) {
-    return SizedBox(
-      height: 70,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isIncome ? Colors.green : Colors.red,
-            size: 26,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          ),
-          Text(
-            "\$${amount.toStringAsFixed(2)}",
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: isIncome ? Colors.green : Colors.red,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // Logika dialog kalender (dibiarkan di sini karena menggunakan state)
   void _showCalendarDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
+        // Placeholder dialog kalender
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
           child: Container(
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                Text("Calendar Dialog", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                // Menggunakan isSameDay di sini yang mungkin menjadi sumber error
                 TableCalendar(
                   focusedDay: _focusedDay,
                   firstDay: DateTime.utc(2020, 1, 1),
                   lastDay: DateTime.utc(2030, 12, 31),
-                  selectedDayPredicate: (day) {
-                    return isSameDay(_selectedDay, day);
-                  },
+                  // isSameDay adalah fungsi utilitas dari package:table_calendar
+                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                   onDaySelected: (selected, focused) {
                     setState(() {
                       _selectedDay = selected;
                       _focusedDay = focused;
                     });
                   },
-                  headerStyle: HeaderStyle(
-                    titleCentered: true,
-                    formatButtonVisible: false,
-                    titleTextStyle: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  calendarStyle: CalendarStyle(
-                    todayDecoration: BoxDecoration(
-                      color: Colors.orangeAccent.shade200,
-                      shape: BoxShape.circle,
-                    ),
-                    selectedDecoration: const BoxDecoration(
-                      color: Color(0xFF0EA5E9),
-                      shape: BoxShape.circle,
-                    ),
-                    selectedTextStyle: const TextStyle(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  "Transactions for ${_selectedDay!.day}/${_selectedDay!.month}/${_selectedDay!.year}",
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: transactions.length,
-                    itemBuilder: (context, index) {
-                      final tx = transactions[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: tx["color"],
-                          child: Icon(tx["icon"], color: Colors.white),
-                        ),
-                        title: Text(tx["title"]),
-                        subtitle: Text(tx["category"]),
-                        trailing: Text(
-                          "${tx["isExpense"] ? '-' : ''}\$${tx["amount"].abs().toStringAsFixed(2)}",
-                          style: TextStyle(
-                            color: tx["isExpense"] ? Colors.red : Colors.green,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
                 ),
               ],
             ),
@@ -347,114 +197,5 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         );
       },
     );
-  }
-}
-
-class LineChart extends StatelessWidget {
-  final List<Map<String, dynamic>> data;
-
-  const LineChart({super.key, required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    double maxIncome = 0.0;
-    double maxExpense = 0.0;
-
-    for (var item in data) {
-      if (item['income'] > maxIncome) {
-        maxIncome = item['income'];
-      }
-      if (item['expense'] > maxExpense) {
-        maxExpense = item['expense'];
-      }
-    }
-
-    final double maxVal = math.max(maxIncome, maxExpense) * 1.2;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double width = constraints.maxWidth;
-        final double height = constraints.maxHeight;
-
-        final List<Offset> incomePoints = [];
-        final List<Offset> expensePoints = [];
-        final double pointDistance = width / (data.length - 1);
-
-        for (int i = 0; i < data.length; i++) {
-          final double income = data[i]['income'];
-          final double expense = data[i]['expense'];
-          final double x = i * pointDistance;
-          final double yIncome = height - (income / maxVal) * height;
-          final double yExpense = height - (expense / maxVal) * height;
-
-          incomePoints.add(Offset(x, yIncome));
-          expensePoints.add(Offset(x, yExpense));
-        }
-
-        return Stack(
-          children: [
-            CustomPaint(
-              painter: _LineChartPainter(
-                incomePoints: incomePoints,
-                expensePoints: expensePoints,
-              ),
-              child: Container(),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: data.map((item) {
-                  return Text(item['day'], style: GoogleFonts.poppins(fontSize: 12));
-                }).toList(),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _LineChartPainter extends CustomPainter {
-  final List<Offset> incomePoints;
-  final List<Offset> expensePoints;
-
-  _LineChartPainter({required this.incomePoints, required this.expensePoints});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint incomePaint = Paint()
-      ..color = Colors.green
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    final Paint expensePaint = Paint()
-      ..color = Colors.red
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    if (incomePoints.length > 1) {
-      final Path incomePath = Path()..moveTo(incomePoints[0].dx, incomePoints[0].dy);
-      for (int i = 1; i < incomePoints.length; i++) {
-        incomePath.lineTo(incomePoints[i].dx, incomePoints[i].dy);
-      }
-      canvas.drawPath(incomePath, incomePaint);
-    }
-
-    if (expensePoints.length > 1) {
-      final Path expensePath = Path()..moveTo(expensePoints[0].dx, expensePoints[0].dy);
-      for (int i = 1; i < expensePoints.length; i++) {
-        expensePath.lineTo(expensePoints[i].dx, expensePoints[i].dy);
-      }
-      canvas.drawPath(expensePath, expensePaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
   }
 }
