@@ -1,7 +1,8 @@
+import 'package:dompetku/presentation/pages/analytics/analytics_page.dart';
 import 'package:flutter/material.dart';
 import 'package:dompetku/presentation/widgets/delete_confirmation_dialog.dart';
 import 'package:dompetku/presentation/pages/transactions/add_transaction_page.dart';
-
+import 'package:dompetku/presentation/widgets/date_picker_calender.dart';
 class TransactionListPage extends StatelessWidget {
   final String categoryName;
   final bool isIncome;
@@ -16,71 +17,182 @@ class TransactionListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF07BEB8);
     const Color secondaryColor = Color(0xFFF8FFF2);
-    const Color backgroundColor = Color(0xFFf5f5f5);
 
-    // Dummy Data Transaksi (dapat disesuaikan berdasarkan categoryName dan isIncome)
+    // Dummy Data
     final List<Map<String, dynamic>> transactions = isIncome
-        ? [{'name': 'Gaji', 'date': '7 October 2025', 'amount': '10.000.000', 'isIncome': true}]
-        : [{'name': 'Makan Siang', 'date': '7 October 2025', 'amount': '50.000', 'isIncome': false}];
+        ? [
+      {
+        'name': 'Gaji',
+        'date': '7 October 2025',
+        'amount': '10.000.000',
+        'isIncome': true
+      }
+    ]
+        : [
+      {
+        'name': 'Makan Siang',
+        'date': '7 October 2025',
+        'amount': '50.000',
+        'isIncome': false
+      }
+    ];
+
+    // Dummy Goals (khusus kategori Goals)
+    final List<Map<String, dynamic>> goals = [
+      {
+        'title': 'New Phone',
+        'target': 5000000,
+        'current': 1500000,
+        'date': 'Dec 2025'
+      },
+      {
+        'title': 'Gaming PC',
+        'target': 12000000,
+        'current': 3000000,
+        'date': 'Jan 2026'
+      },
+    ];
+
+    final bool isGoalsPage = categoryName == "Goals";
 
     return Scaffold(
       backgroundColor: primaryColor,
       body: Column(
         children: [
-          _HeaderSection(primaryColor: primaryColor, title: categoryName, isIncome: isIncome),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: secondaryColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(50),
-                  topRight: Radius.circular(50),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: const Offset(0, -3),
-                  ),
-                ],
-              ),
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-                children: [
-                  // Filter Bulan
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'October',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          // TODO: Implementasi date picker/filter
-                        },
-                        icon: const Icon(Icons.calendar_month, color: primaryColor),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
+          _HeaderSection(
+            primaryColor: primaryColor,
+            title: categoryName,
+            isIncome: isIncome,
+          ),
 
-                  // Daftar Transaksi
-                  ...transactions.map((t) => _TransactionItem(
-                    name: t['name'],
-                    date: t['date'],
-                    amount: t['amount'],
-                    isIncome: t['isIncome'],
-                    primaryColor: primaryColor,
-                    onDelete: () => _showDeleteConfirmation(context),
-                  )).toList(),
-                ],
+          // ============================
+          //      MODE KHUSUS GOALS
+          // ============================
+          // ============================
+//      MODE KHUSUS GOALS
+// ============================
+          if (isGoalsPage)
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: secondaryColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(50),
+                    topRight: Radius.circular(50),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                child: ListView(
+                  children: [
+                    const SizedBox(height: 5),
+
+                    const Text(
+                      "Progress History",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 15),
+
+                    // LIST PROGRESS (sama seperti kategori biasa)
+                    _TransactionItem(
+                      name: "Top Up Salary",
+                      date: "5 October 2025",
+                      amount: "200.000",
+                      isIncome: true,
+                      primaryColor: primaryColor,
+                      onDelete: () => _showDeleteConfirmation(context),
+                    ),
+
+                    _TransactionItem(
+                      name: "Bonus",
+                      date: "1 October 2025",
+                      amount: "500.000",
+                      isIncome: true,
+                      primaryColor: primaryColor,
+                      onDelete: () => _showDeleteConfirmation(context),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+
+
+          // ============================
+          //    MODE KATEGORI BIASA
+          // ============================
+          if (!isGoalsPage)
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: secondaryColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(50),
+                    topRight: Radius.circular(50),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: const Offset(0, -3),
+                    ),
+                  ],
+                ),
+                child: ListView(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'October',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87),
+                        ),
+                        IconButton(
+                          onPressed: () async {
+                            final selectedDate = await showDialog(
+                              context: context,
+                              builder: (_) => const DatePickerCalendar(),
+                            );
+
+                            if (selectedDate != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Selected: ${selectedDate.day}-${selectedDate.month}-${selectedDate.year}"),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.calendar_month, color: primaryColor),
+                        ),
+
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    ...transactions
+                        .map(
+                          (t) => _TransactionItem(
+                        name: t['name'],
+                        date: t['date'],
+                        amount: t['amount'],
+                        isIncome: t['isIncome'],
+                        primaryColor: primaryColor,
+                        onDelete: () => _showDeleteConfirmation(context),
+                      ),
+                    )
+                        .toList(),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
+
+      // Tombol Add tetap muncul untuk semua kategori
       bottomNavigationBar: Container(
         padding: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
         color: secondaryColor,
@@ -90,7 +202,10 @@ class TransactionListPage extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AddTransactionPage()),
+                MaterialPageRoute(
+                    builder: (context) => AddTransactionPage(
+                      isGoals: isGoalsPage,
+                    )),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -99,9 +214,12 @@ class TransactionListPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(25),
               ),
             ),
-            child: const Text(
-              'Add',
-              style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+            child: Text(
+              isGoalsPage ? "Add Progress" : 'Add',
+              style: const TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -109,7 +227,6 @@ class TransactionListPage extends StatelessWidget {
     );
   }
 
-  // Fungsi untuk menampilkan dialog konfirmasi
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
@@ -119,15 +236,16 @@ class TransactionListPage extends StatelessWidget {
     );
   }
 }
-
-
-// Widget Header di bagian atas
 class _HeaderSection extends StatelessWidget {
   final Color primaryColor;
   final String title;
   final bool isIncome;
 
-  const _HeaderSection({required this.primaryColor, required this.title, required this.isIncome});
+  const _HeaderSection({
+    required this.primaryColor,
+    required this.title,
+    required this.isIncome,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -138,13 +256,9 @@ class _HeaderSection extends StatelessWidget {
         left: 20,
         right: 20,
       ),
-      decoration: BoxDecoration(
-        color: primaryColor,
-      ),
+      color: primaryColor,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Tombol Back & Title
           Row(
             children: [
               IconButton(
@@ -156,10 +270,9 @@ class _HeaderSection extends StatelessWidget {
                   child: Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                 ),
               ),
@@ -167,40 +280,63 @@ class _HeaderSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          // Total Balance
-          Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          title == "Goals"
+              ? Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: secondaryColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  isIncome ? Icons.account_balance_wallet : Icons.money_off,
-                  color: Colors.white,
-                  size: 20,
+                const Text(
+                  "New Phone",
+                  style: TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(height: 10),
+
+                // Progress bar
+                LinearProgressIndicator(
+                  value: 1500000 / 5000000,
+                  color: primaryColor,
+                  backgroundColor: primaryColor.withOpacity(0.2),
+                  minHeight: 10,
+                ),
+
+                const SizedBox(height: 10),
                 Text(
-                  isIncome ? 'Total Balance' : 'Total Expense',
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  "Rp 1.500.000 / Rp 5.000.000",
+                  style: TextStyle(
+                      color: primaryColor, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  "Deadline: Dec 2025",
+                  style: TextStyle(color: Colors.grey),
                 ),
               ],
             ),
-          ),
+          )
 
-          const Text(
+          // Jika kategori lain → tetap angka saldo
+              : const Text(
             'Rp.10.000.000',
             style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+                fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white),
           ),
+
         ],
       ),
     );
   }
 }
 
-// Widget Item Transaksi
+// ============================
+//       LIST ITEM BIASA
+// ============================
 class _TransactionItem extends StatelessWidget {
   final String name;
   final String date;
@@ -237,7 +373,6 @@ class _TransactionItem extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Ikon
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -250,23 +385,18 @@ class _TransactionItem extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 15),
-            // Detail Transaksi
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  Text(
-                    date,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
+                  Text(name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(date,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 ],
               ),
             ),
-            // Jumlah & Tombol Delete
             Text(
               (isIncome ? '+' : '-') + amount,
               style: TextStyle(
@@ -281,6 +411,95 @@ class _TransactionItem extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ============================
+//       ITEM GOALS BARU
+// ============================
+class GoalItem extends StatelessWidget {
+  final String title;
+  final int target;
+  final int current;
+  final String date;
+  final Color primaryColor;
+
+  const GoalItem({
+    super.key,
+    required this.title,
+    required this.target,
+    required this.current,
+    required this.date,
+    required this.primaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    double progress = current / target;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          // Circular progress
+          SizedBox(
+            width: 70,
+            height: 70,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: progress,
+                  strokeWidth: 7,
+                  color: primaryColor,
+                  backgroundColor: primaryColor.withOpacity(0.2),
+                ),
+                Text(
+                  "${(progress * 100).toInt()}%",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                )
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 20),
+
+          // Text info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(
+                  "Deadline: $date",
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "Rp $current / Rp $target",
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: primaryColor),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
