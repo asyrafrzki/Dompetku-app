@@ -1,13 +1,18 @@
-import 'package:dompetku/presentation/pages/analytics/analytics_page.dart';
-import 'package:dompetku/presentation/pages/profile/edit_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:dompetku/presentation/widgets/date_picker_calender.dart';
+import 'package:dompetku/providers/transaction_provider.dart';
 
 class AddTransactionPage extends StatefulWidget {
   final bool isGoals;
+  final String? goalId;
 
-  const AddTransactionPage({super.key, this.isGoals = false});
+  const AddTransactionPage({
+    super.key,
+    this.isGoals = false,
+    this.goalId,
+  });
 
   @override
   State<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -18,160 +23,250 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   final TextEditingController amountController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
 
+  Map<String, dynamic>? selectedCategory;
+
+  final _formKey = GlobalKey<FormState>();
+
+  final List<Map<String, dynamic>> categories = [
+    {'name': 'Food', 'icon': Icons.restaurant_menu, 'isIncome': false, 'isGoals': false},
+    {'name': 'Transport', 'icon': Icons.directions_bus, 'isIncome': false, 'isGoals': false},
+    {'name': 'Medicine', 'icon': Icons.local_pharmacy, 'isIncome': false, 'isGoals': false},
+    {'name': 'Groceries', 'icon': Icons.shopping_bag, 'isIncome': false, 'isGoals': false},
+    {'name': 'Income', 'icon': Icons.monetization_on, 'isIncome': true, 'isGoals': false},
+    {'name': 'Others', 'icon': Icons.more_horiz, 'isIncome': false, 'isGoals': false},
+  ];
+
   @override
-  Widget build(BuildContext context) {
-    const Color primaryColor = Color(0xFF07BEB8);
-    const Color backgroundColor = Color(0xFFf5f5f5);
+  void initState() {
+    super.initState();
+    dateController.text = _formatDate(DateTime.now());
 
-    return Scaffold(
-      backgroundColor: secondaryColor,
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          widget.isGoals ? 'Add Progress' : 'Income',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
+    // default kategori
+    selectedCategory = widget.isGoals
+        ? {
+      'name': 'Goals',
+      'icon': Icons.flag,
+      'isIncome': false,
+      'isGoals': true,
+    }
+        : {
+      'name': 'Others',
+      'icon': Icons.more_horiz,
+      'isIncome': false,
+      'isGoals': false,
+    };
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.day}-${date.month}-${date.year}";
+  }
+
+  // =============================
+  // SAVE TRANSACTION
+  // =============================
+  Future<void> _saveTransaction() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final provider = Provider.of<TransactionProvider>(context, listen: false);
+
+    final errorMessage = await provider.saveTransaction(
+      date: dateController.text,
+      amountString: amountController.text,
+      description: descriptionController.text,
+      category: selectedCategory!,
+      goalId: widget.isGoals ? widget.goalId : null,
+    );
+
+    if (errorMessage == null) {
+      _showSnackBar("Sukses", "Data berhasil disimpan!", Colors.green, Icons.check_circle);
+
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        if (mounted) Navigator.pop(context);
+      });
+    } else {
+      _showSnackBar("Gagal", errorMessage, Colors.red, Icons.error);
+    }
+  }
+
+  // =============================
+  // CATEGORY PICKER
+  // =============================
+  void _openCategoryPicker() {
+    if (widget.isGoals) return;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _InputCard(
-            title: 'Date',
-            hintText: 'Pick Date',
-            icon: Icons.calendar_today,
-            controller: dateController,
-            onTapIcon: () async {
-              final selectedDate = await showDialog(
-                context: context,
-                builder: (_) => const DatePickerCalendar(),
-              );
-
-              if (selectedDate != null) {
-                final formatted =
-                    "${selectedDate.day}-${selectedDate.month}-${selectedDate.year}";
-                setState(() {
-                  dateController.text = formatted;
-                });
-              }
-            },
-          ),
-
-          _InputCard(
-            title: widget.isGoals ? 'Progress Amount' : 'Amount',
-            hintText: 'Rp. 10.000',
-            isCurrency: true,
-            controller: amountController,
-          ),
-
-          _InputCard(
-            title: widget.isGoals ? 'Note' : 'Description',
-            hintText: widget.isGoals ? 'Add progress note' : 'Gaji',
-            controller: descriptionController,
-          ),
-
-          const SizedBox(height: 30),
-
-          SizedBox(
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-              child: const Text(
-                'Save',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 15),
+          Text("Choose Category", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 15),
+          ...categories.map((cat) {
+            return ListTile(
+              leading: Icon(cat["icon"]),
+              title: Text(cat["name"]),
+              onTap: () {
+                setState(() => selectedCategory = cat);
+                Navigator.pop(context);
+              },
+            );
+          }).toList()
         ],
       ),
     );
   }
-}
 
-class _InputCard extends StatelessWidget {
-  final String title;
-  final String hintText;
-  final IconData? icon;
-  final VoidCallback? onTapIcon;
-  final bool isCurrency;
-  final TextEditingController? controller;
+  // =============================
+  // SNACKBAR
+  // =============================
+  void _showSnackBar(String title, String message, Color color, IconData icon) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        content: Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(15)),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Text("$title\n$message", style: GoogleFonts.poppins(color: Colors.white)),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-  const _InputCard({
-    required this.title,
-    required this.hintText,
-    this.icon,
-    this.onTapIcon,
-    this.isCurrency = false,
-    this.controller,
-  });
-
+  // =============================
+  // UI
+  // =============================
   @override
   Widget build(BuildContext context) {
-    const Color cardColor = Colors.white;
+    final isSaving = Provider.of<TransactionProvider>(context).isSaving;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.black87),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 5,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: TextField(
-              readOnly: icon != null,
-              controller: controller,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.isGoals ? "Add Goals Progress" : "Add Transaction"),
+        backgroundColor: const Color(0xFF07BEB8),
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            // DATE
+            Text("Date", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 5),
+            TextFormField(
+              controller: dateController,
+              readOnly: true,
               decoration: InputDecoration(
-                hintText: hintText,
-                border: InputBorder.none,
-                suffixIcon: icon != null
-                    ? IconButton(
-                  icon: Icon(icon, color: Color(0xFF07BEB8)),
-                  onPressed: onTapIcon,
-                )
-                    : null,
+                suffixIcon: const Icon(Icons.calendar_today, color: Colors.teal),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              keyboardType:
-              isCurrency ? TextInputType.number : TextInputType.text,
+              onTap: () async {
+                final selected = await showDialog(
+                  context: context,
+                  builder: (_) => const DatePickerCalendar(),
+                );
+                if (selected != null) {
+                  setState(() => dateController.text = _formatDate(selected));
+                }
+              },
             ),
-          ),
-        ],
+
+            const SizedBox(height: 20),
+
+            // CATEGORY PICKER
+            if (!widget.isGoals)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Category", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 5),
+                  GestureDetector(
+                    onTap: _openCategoryPicker,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.black12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(selectedCategory!["icon"], color: Colors.teal),
+                          const SizedBox(width: 10),
+                          Text(selectedCategory!["name"], style: GoogleFonts.poppins(fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+            if (!widget.isGoals) const SizedBox(height: 20),
+
+            // AMOUNT
+            Text("Amount", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 5),
+            TextFormField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
+              decoration: InputDecoration(
+                hintText: "Rp 10.000",
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // DESCRIPTION
+            Text("Description", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 5),
+            TextFormField(
+              controller: descriptionController,
+              validator: (v) => v!.isEmpty ? "Wajib diisi" : null,
+              decoration: InputDecoration(
+                hintText: "e.g. Salary / Food / Notes",
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            // SAVE BUTTON
+            SizedBox(
+              height: 55,
+              child: ElevatedButton(
+                onPressed: isSaving ? null : _saveTransaction,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF07BEB8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                ),
+                child: isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text("Save", style: GoogleFonts.poppins(color: Colors.white, fontSize: 18)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
