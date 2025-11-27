@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class TransactionProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -26,7 +27,6 @@ class TransactionProvider with ChangeNotifier {
   // LOAD DATA dari Firebase
   void loadTransactions() {
     final user = _auth.currentUser;
-
     if (user == null) return;
 
     _firestore
@@ -45,6 +45,85 @@ class TransactionProvider with ChangeNotifier {
 
       notifyListeners();
     });
+  }
+
+  // ===============================
+  // FORMAT CURRENCY
+  // ===============================
+  String formatCurrency(double number) {
+    final formatter = NumberFormat.currency(
+      locale: "id_ID",
+      symbol: "Rp ",
+      decimalDigits: 0,
+    );
+    return formatter.format(number);
+  }
+
+  // ===============================
+  // TOTAL BALANCE
+  // ===============================
+  double get totalBalance {
+    double sum = 0;
+    for (var t in transactions) {
+      double amount = (t['amount'] ?? 0).toDouble();
+      if (t['type'] == 'income') {
+        sum += amount;
+      } else {
+        sum -= amount;
+      }
+    }
+    return sum;
+  }
+
+  // ===============================
+  // TOTAL INCOME
+  // ===============================
+  double get totalIncome {
+    double sum = 0;
+    for (var t in transactions) {
+      if (t['type'] == 'income') {
+        sum += (t['amount'] ?? 0).toDouble();
+      }
+    }
+    return sum;
+  }
+
+  // ===============================
+  // TOTAL EXPENSE BY CATEGORY
+  // ===============================
+  double totalExpenseForCategory(String category) {
+    double sum = 0;
+    for (var t in transactions) {
+      if (t['categoryName'] == category && t['type'] != 'income') {
+        sum += (t['amount'] ?? 0).toDouble();
+      }
+    }
+    return sum;
+  }
+
+  // ===============================
+  // TOTAL INCOME BY CATEGORY
+  // ===============================
+  double totalIncomeForCategory(String category) {
+    double sum = 0;
+    for (var t in transactions) {
+      if (t['categoryName'] == category && t['type'] == 'income') {
+        sum += (t['amount'] ?? 0).toDouble();
+      }
+    }
+    return sum;
+  }
+
+  // ===============================
+  // UNIVERSAL: TOTAL BY CATEGORY
+  // dipakai UI kamu: provider.totalForCategory(title, isIncome)
+  // ===============================
+  double totalForCategory(String category, bool isIncome) {
+    if (isIncome) {
+      return totalIncomeForCategory(category);
+    } else {
+      return totalExpenseForCategory(category);
+    }
   }
 
   // ===============================
@@ -68,9 +147,7 @@ class TransactionProvider with ChangeNotifier {
     final double amount =
         double.tryParse(amountString.replaceAll(",", ".")) ?? 0;
 
-    // ====== TYPE LOGIC ======
     String transactionType = "expense"; // default
-
     if (category["isGoals"] == true) {
       transactionType = "goal_progress";
     } else if (category["isIncome"] == true) {
@@ -89,9 +166,7 @@ class TransactionProvider with ChangeNotifier {
       'timestamp': FieldValue.serverTimestamp(),
     };
 
-    if (goalId != null) {
-      data['goalId'] = goalId;
-    }
+    if (goalId != null) data['goalId'] = goalId;
 
     try {
       await _firestore
@@ -102,9 +177,6 @@ class TransactionProvider with ChangeNotifier {
 
       _setSaving(false);
       return null;
-    } on FirebaseException catch (e) {
-      _setSaving(false);
-      return e.message;
     } catch (e) {
       _setSaving(false);
       return "Terjadi kesalahan: $e";

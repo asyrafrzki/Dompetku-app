@@ -1,5 +1,4 @@
 import 'package:dompetku/presentation/pages/transactions/add_transaction_page.dart';
-import 'package:dompetku/presentation/widgets/delete_confirmation_dialog.dart';
 import 'package:dompetku/presentation/widgets/date_picker_calender.dart';
 import 'package:dompetku/providers/transaction_provider.dart';
 import 'package:flutter/material.dart';
@@ -23,37 +22,34 @@ class TransactionListPage extends StatelessWidget {
     const Color secondaryColor = Color(0xFFF8FFF2);
 
     final provider = Provider.of<TransactionProvider>(context);
-
-    // Ambil semua transaksi dari provider (real-time)
     final all = provider.transactions;
 
-    // Filternya sesuai requirement:
     List<Map<String, dynamic>> filtered = [];
 
     final bool isGoalsPage = categoryName == "Goals";
     final bool isIncomePage = categoryName == "Income" || isIncome == true;
 
+    // ==================================
+    // FILTER TRANSAKSI
+    // ==================================
     if (isGoalsPage) {
-      filtered = all.where((t) => (t['type'] ?? '') == 'goal_progress').toList();
+      filtered =
+          all.where((t) => t['type'] == 'goal_progress').toList();
     } else if (isIncomePage) {
-      filtered = all.where((t) => (t['type'] ?? '') == 'income').toList();
+      filtered = all.where((t) => t['type'] == 'income').toList();
     } else {
-      // kategori biasa: filter berdasarkan categoryName field
-      filtered = all.where((t) => (t['categoryName'] ?? '') == categoryName).toList();
+      filtered =
+          all.where((t) => t['categoryName'] == categoryName).toList();
     }
 
-    // Optional: urutkan berdasarkan timestamp desc (jika ada)
+    // sort by timestamp
     filtered.sort((a, b) {
       final ta = a['timestamp'];
       final tb = b['timestamp'];
       if (ta == null || tb == null) return 0;
-      try {
-        final da = (ta as Timestamp).toDate();
-        final db = (tb as Timestamp).toDate();
-        return db.compareTo(da);
-      } catch (e) {
-        return 0;
-      }
+      return (tb as Timestamp)
+          .toDate()
+          .compareTo((ta as Timestamp).toDate());
     });
 
     return Scaffold(
@@ -74,71 +70,62 @@ class TransactionListPage extends StatelessWidget {
                   topLeft: Radius.circular(50),
                   topRight: Radius.circular(50),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: const Offset(0, -3),
-                  ),
-                ],
               ),
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                 children: [
-                  // Header row (month / calendar)
                   if (!isGoalsPage)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
                           'History',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         IconButton(
                           onPressed: () async {
-                            final selectedDate = await showDialog(
+                            await showDialog(
                               context: context,
                               builder: (_) => const DatePickerCalendar(),
                             );
-
-                            if (selectedDate != null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Selected: ${selectedDate.day}-${selectedDate.month}-${selectedDate.year}"),
-                                ),
-                              );
-                            }
                           },
-                          icon: const Icon(Icons.calendar_month, color: primaryColor),
+                          icon: const Icon(Icons.calendar_month,
+                              color: primaryColor),
                         ),
                       ],
                     ),
 
                   const SizedBox(height: 10),
 
-                  // Empty state
                   if (filtered.isEmpty)
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.only(top: 40),
                         child: Text(
                           "Belum ada transaksi",
-                          style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
 
-                  // List dari database (real)
                   ...filtered.map(
                         (t) {
                       final String id = t['id'] ?? '';
-                      final String name = (t['description'] ?? t['categoryName'] ?? '-').toString();
+                      final String name = (t['description'] ??
+                          t['categoryName'] ??
+                          '-')
+                          .toString();
                       final String date = (t['date'] ?? '-').toString();
-                      final String amount = (t['amount']?.toString() ?? '0');
-                      final bool income = (t['isIncome'] == true) || ((t['type'] ?? '') == 'income');
+                      final double amount =
+                      (t['amount'] ?? 0).toDouble();
+                      final bool income = t['type'] == 'income';
 
                       return _TransactionItem(
+                        id: id,
                         name: name,
                         date: date,
                         amount: amount,
@@ -147,7 +134,7 @@ class TransactionListPage extends StatelessWidget {
                         onDelete: () => _confirmDelete(context, id),
                       );
                     },
-                  ).toList(),
+                  ),
                 ],
               ),
             ),
@@ -155,9 +142,12 @@ class TransactionListPage extends StatelessWidget {
         ],
       ),
 
-      // Tombol Add tetap seperti semula
+      // ==================================
+      // TOMBOL ADD — LANGSUNG TERIMA CATEGORY
+      // ==================================
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
+        padding:
+        const EdgeInsets.only(bottom: 20, left: 20, right: 20),
         color: secondaryColor,
         child: SizedBox(
           height: 50,
@@ -165,18 +155,25 @@ class TransactionListPage extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AddTransactionPage(isGoals: isGoalsPage)),
+                MaterialPageRoute(
+                  builder: (context) => AddTransactionPage(
+                    isGoals: isGoalsPage,
+                    selectedCategoryName: categoryName, // <<< penting
+                  ),
+                ),
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
+                  borderRadius: BorderRadius.circular(25)),
             ),
             child: Text(
               isGoalsPage ? "Add Progress" : 'Add',
-              style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -184,11 +181,10 @@ class TransactionListPage extends StatelessWidget {
     );
   }
 
-  // Konfirmasi & hapus dokumen di Firestore
   void _confirmDelete(BuildContext context, String id) {
     if (id.isEmpty) {
-      // tidak bisa hapus tanpa id
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("ID transaksi tidak ditemukan.")));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("ID transaksi tidak ditemukan.")));
       return;
     }
 
@@ -197,29 +193,36 @@ class TransactionListPage extends StatelessWidget {
       builder: (ctx) {
         return AlertDialog(
           title: const Text("Hapus transaksi"),
-          content: const Text("Yakin ingin menghapus transaksi ini?"),
+          content:
+          const Text("Yakin ingin menghapus transaksi ini?"),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Batal")),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Batal")),
             TextButton(
               onPressed: () async {
-                Navigator.pop(ctx); // tutup dialog dulu
+                Navigator.pop(ctx);
                 try {
                   final user = FirebaseAuth.instance.currentUser;
-                  if (user == null) throw "Pengguna tidak terautentikasi.";
-
                   await FirebaseFirestore.instance
                       .collection("users")
-                      .doc(user.uid)
+                      .doc(user!.uid)
                       .collection("transactions")
                       .doc(id)
                       .delete();
 
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Transaksi dihapus.")));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Transaksi dihapus.")),
+                  );
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Gagal hapus: $e")));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text("Gagal hapus: $e")),
+                  );
                 }
               },
-              child: const Text("Hapus", style: TextStyle(color: Colors.red)),
+              child: const Text("Hapus",
+                  style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -228,9 +231,9 @@ class TransactionListPage extends StatelessWidget {
   }
 }
 
-// ---------------------------
-// Header section & transaction item (sama seperti yang kamu punya)
-// ---------------------------
+// =============================================
+// HEADER
+// =============================================
 class _HeaderSection extends StatelessWidget {
   final Color primaryColor;
   final String title;
@@ -244,6 +247,8 @@ class _HeaderSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<TransactionProvider>(context);
+
     const Color secondaryColor = Color(0xFFF8FFF2);
 
     return Container(
@@ -258,33 +263,52 @@ class _HeaderSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
+              IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context)),
               Expanded(
                 child: Center(
-                  child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
                 ),
               ),
               const SizedBox(width: 48),
             ],
           ),
           const SizedBox(height: 20),
+
+          // Goals tidak punya total uang
           title == "Goals"
               ? Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: secondaryColor, borderRadius: BorderRadius.circular(20)),
-            child: Column(
+            decoration: BoxDecoration(
+                color: secondaryColor,
+                borderRadius: BorderRadius.circular(20)),
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Progress History", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                const Text("Riwayat progress goals ditampilkan di bawah."),
+                Text("Progress History",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+                Text("Riwayat progress goals ditampilkan di bawah."),
               ],
             ),
           )
-              : const Text(
-            'Rp.10.000.000',
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white),
+              : Text(
+            provider.formatCurrency(
+                provider.totalForCategory(title, isIncome)),
+            style: const TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+                color: Colors.white),
           ),
         ],
       ),
@@ -292,18 +316,20 @@ class _HeaderSection extends StatelessWidget {
   }
 }
 
-// ============================
-//       LIST ITEM BIASA
-// ============================
+// =============================================
+// ITEM TRANSAKSI
+// =============================================
 class _TransactionItem extends StatelessWidget {
+  final String id;
   final String name;
   final String date;
-  final String amount;
+  final double amount;
   final bool isIncome;
   final Color primaryColor;
   final VoidCallback onDelete;
 
   const _TransactionItem({
+    required this.id,
     required this.name,
     required this.date,
     required this.amount,
@@ -314,32 +340,65 @@ class _TransactionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final provider =
+    Provider.of<TransactionProvider>(context, listen: false);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Container(
         padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 3)),
-        ]),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 5,
+                offset: const Offset(0, 3)),
+          ],
+        ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-              child: Icon(isIncome ? Icons.attach_money : Icons.shopping_bag, color: primaryColor),
+              decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10)),
+              child: Icon(
+                  isIncome
+                      ? Icons.attach_money
+                      : Icons.shopping_bag,
+                  color: primaryColor),
             ),
             const SizedBox(width: 15),
+
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text(date, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              ]),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(date,
+                      style: const TextStyle(
+                          color: Colors.grey, fontSize: 12)),
+                ],
+              ),
             ),
+
             Text(
-              (isIncome ? '+' : '-') + amount,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isIncome ? primaryColor : Colors.red),
+              (isIncome ? "+" : "-") +
+                  provider.formatCurrency(amount),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: isIncome ? primaryColor : Colors.red,
+              ),
             ),
-            IconButton(onPressed: onDelete, icon: const Icon(Icons.delete, color: Colors.red)),
+
+            IconButton(
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete, color: Colors.red)),
           ],
         ),
       ),

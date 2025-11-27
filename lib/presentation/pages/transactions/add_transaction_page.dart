@@ -8,10 +8,14 @@ class AddTransactionPage extends StatefulWidget {
   final bool isGoals;
   final String? goalId;
 
+  // >>> PARAMETER BARU = selectedCategoryName
+  final String? selectedCategoryName;
+
   const AddTransactionPage({
     super.key,
     this.isGoals = false,
     this.goalId,
+    this.selectedCategoryName,
   });
 
   @override
@@ -41,20 +45,22 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     super.initState();
     dateController.text = _formatDate(DateTime.now());
 
-    // default kategori
-    selectedCategory = widget.isGoals
-        ? {
-      'name': 'Goals',
-      'icon': Icons.flag,
-      'isIncome': false,
-      'isGoals': true,
+    // AUTO SET CATEGORY BERDASARKAN PAGE TERPILIH
+    if (widget.isGoals) {
+      selectedCategory = {
+        'name': 'Goals',
+        'icon': Icons.flag,
+        'isIncome': false,
+        'isGoals': true,
+      };
+    } else if (widget.selectedCategoryName != null) {
+      selectedCategory = categories.firstWhere(
+            (c) => c['name'] == widget.selectedCategoryName,
+        orElse: () => categories.last,
+      );
+    } else {
+      selectedCategory = categories.last; // Others
     }
-        : {
-      'name': 'Others',
-      'icon': Icons.more_horiz,
-      'isIncome': false,
-      'isGoals': false,
-    };
   }
 
   String _formatDate(DateTime date) {
@@ -103,7 +109,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 15),
-          Text("Choose Category", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text("Choose Category",
+              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 15),
           ...categories.map((cat) {
             return ListTile(
@@ -188,7 +195,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
 
             const SizedBox(height: 20),
 
-            // CATEGORY PICKER
+            // CATEGORY (AUTO)
             if (!widget.isGoals)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,7 +215,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                         children: [
                           Icon(selectedCategory!["icon"], color: Colors.teal),
                           const SizedBox(width: 10),
-                          Text(selectedCategory!["name"], style: GoogleFonts.poppins(fontSize: 16)),
+                          Text(selectedCategory!["name"],
+                              style: GoogleFonts.poppins(fontSize: 16)),
                         ],
                       ),
                     ),
@@ -262,7 +270,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 ),
                 child: isSaving
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : Text("Save", style: GoogleFonts.poppins(color: Colors.white, fontSize: 18)),
+                    : Text("Save",
+                    style: GoogleFonts.poppins(color: Colors.white, fontSize: 18)),
               ),
             ),
           ],
