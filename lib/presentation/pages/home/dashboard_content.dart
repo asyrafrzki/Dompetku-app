@@ -1,9 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+
 import 'package:dompetku/presentation/pages/notification/notification_page.dart';
-import 'package:dompetku/presentation/widgets/income_expense_card.dart';
 import 'package:dompetku/presentation/widgets/time_frame_button.dart';
+
+// --- DEFINISI WARNA ---
+const Color kPrimaryColor = Color(0xFF07BEB8);
+const Color kLightBackgroundColor = Color(0xFFF8FFF2);
 
 class DashboardContent extends StatefulWidget {
   const DashboardContent({super.key});
@@ -14,29 +20,81 @@ class DashboardContent extends StatefulWidget {
 
 class _DashboardContentState extends State<DashboardContent> {
   int _selectedTab = 0;
+  final User? _currentUser = FirebaseAuth.instance.currentUser;
 
-  String _getTabText(int index) {
-    switch (index) {
-      case 0: return "Daily";
-      case 1: return "Weekly";
-      case 2: return "Monthly";
-      default: return "";
+  // Variabel untuk menyimpan Total Income dan Expense yang difilter
+  double _totalIncomeFiltered = 0.0;
+  double _totalExpenseFiltered = 0.0;
+
+  // ====================================================
+  // 1. LOGIKA WAKTU
+  // ====================================================
+
+  Map<String, DateTime> _getTimeFrame() {
+    final now = DateTime.now();
+    DateTime startDate;
+    DateTime endDate;
+
+    switch (_selectedTab) {
+      case 0: // Daily
+        startDate = DateTime(now.year, now.month, now.day);
+        endDate = startDate.add(const Duration(days: 1));
+        break;
+      case 1: // Weekly (Senin - Minggu)
+        final daysToSubtract = now.weekday - 1;
+        startDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: daysToSubtract));
+        endDate = startDate.add(const Duration(days: 7));
+        break;
+      case 2: // Monthly
+        startDate = DateTime(now.year, now.month, 1);
+        endDate = DateTime(now.year, now.month + 1, 1);
+        break;
+      default:
+        startDate = DateTime(now.year, 1, 1);
+        endDate = DateTime(now.year + 1, 1, 1);
     }
+    return {'start': startDate, 'end': endDate};
   }
+
+  // ====================================================
+  // 2. LOGIKA DATABASE FIREBASE
+  // ====================================================
+
+  Stream<QuerySnapshot> _getTransactionStream() {
+    if (_currentUser == null) {
+      return const Stream.empty();
+    }
+
+    final timeFrame = _getTimeFrame();
+    final startTimestamp = timeFrame['start'];
+    final endTimestamp = timeFrame['end'];
+
+    return FirebaseFirestore.instance
+        .collection("users")
+        .doc(_currentUser!.uid)
+        .collection("transactions")
+        .where('timestamp', isGreaterThanOrEqualTo: startTimestamp)
+        .where('timestamp', isLessThan: endTimestamp)
+        .orderBy('timestamp', descending: true)
+        .snapshots();
+  }
+
+  // ====================================================
+  // 3. WIDGET UTAMA
+  // ====================================================
 
   @override
   Widget build(BuildContext context) {
-    // Simulasi data user karena tidak ada main.dart
-    final User? user = FirebaseAuth.instance.currentUser;
-    final String userName = user?.displayName ?? user?.email ?? "User";
+    final String userName = _currentUser?.displayName ?? _currentUser?.email ?? "User";
+    final double statusBarHeight = MediaQuery.of(context).padding.top;
 
     return Column(
       children: [
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(28, 60, 28, 40),
+          padding: EdgeInsets.fromLTRB(28, statusBarHeight + 20, 28, 40),
           decoration: const BoxDecoration(
-            color: Color(0xFF07BEB8),
+            color: kPrimaryColor,
             borderRadius: BorderRadius.only(
               bottomLeft: Radius.circular(45),
               bottomRight: Radius.circular(45),
@@ -78,70 +136,341 @@ class _DashboardContentState extends State<DashboardContent> {
                 ],
               ),
               const SizedBox(height: 25),
-              const IncomeExpenseCard(),
+              // MEMANGGIL CARD DENGAN NILAI YANG DI-FILTER
+              _IncomeExpenseCard(
+                totalIncome: _totalIncomeFiltered,
+                totalExpense: _totalExpenseFiltered,
+              ),
             ],
           ),
         ),
         Expanded(
-          child: Container(
-            color: const Color(0xFFF8FFF2),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 45),
+            child: Container(
+              color: kLightBackgroundColor,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 45),
 
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Transactions",
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Transactions",
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF07BEB8),
-                      borderRadius: BorderRadius.circular(25),
+                    // TAB (Daily, Weekly, Monthly)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: kPrimaryColor,
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          TimeFrameButton(
+                            text: "Daily",
+                            selected: _selectedTab == 0,
+                            onTap: () {
+                              setState(() {
+                                _selectedTab = 0;
+                              });
+                            },
+                          ),
+                          TimeFrameButton(
+                            text: "Weekly",
+                            selected: _selectedTab == 1,
+                            onTap: () {
+                              setState(() {
+                                _selectedTab = 1;
+                              });
+                            },
+                          ),
+                          TimeFrameButton(
+                            text: "Monthly",
+                            selected: _selectedTab == 2,
+                            onTap: () {
+                              setState(() {
+                                _selectedTab = 2;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        TimeFrameButton(
-                          text: "Daily",
-                          selected: _selectedTab == 0,
-                          onTap: () => setState(() => _selectedTab = 0),
-                        ),
-                        TimeFrameButton(
-                          text: "Weekly",
-                          selected: _selectedTab == 1,
-                          onTap: () => setState(() => _selectedTab = 1),
-                        ),
-                        TimeFrameButton(
-                          text: "Monthly",
-                          selected: _selectedTab == 2,
-                          onTap: () => setState(() => _selectedTab = 2),
-                        ),
-                      ],
+
+                    const SizedBox(height: 30),
+
+                    // ====================================================
+                    // LIST TRANSAKSI (DENGAN LOGIKA HITUNG TOTAL)
+                    // ====================================================
+                    StreamBuilder<QuerySnapshot>(
+                      stream: _getTransactionStream(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          // Tampilkan loading saat menunggu data
+                          return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
+                        }
+                        if (snapshot.hasError) {
+                          return Center(child: Text("Error: ${snapshot.error}"));
+                        }
+
+                        final transactions = snapshot.data?.docs ?? [];
+
+                        // === LOGIKA PENGHITUNGAN TOTAL BARU ===
+                        double currentIncome = 0.0;
+                        double currentExpense = 0.0;
+
+                        for (var doc in transactions) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final double amount = (data['amount'] ?? 0).toDouble();
+                          final String type = data['type'] ?? '';
+
+                          if (type == 'income') {
+                            currentIncome += amount;
+                          } else {
+                            currentExpense += amount;
+                          }
+                        }
+
+                        // Update state Total Income/Expense dan panggil build
+                        // Widget yang menggunakan _totalIncomeFiltered akan ter-rebuild
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (_totalIncomeFiltered != currentIncome || _totalExpenseFiltered != currentExpense) {
+                            setState(() {
+                              _totalIncomeFiltered = currentIncome;
+                              _totalExpenseFiltered = currentExpense;
+                            });
+                          }
+                        });
+                        // =====================================
+
+                        if (transactions.isEmpty) {
+                          return const Padding(
+                            padding: EdgeInsets.only(top: 40),
+                            child: Text("Belum ada transaksi di periode ini."),
+                          );
+                        }
+
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: transactions.length,
+                          itemBuilder: (context, index) {
+                            final data = transactions[index].data() as Map<String, dynamic>;
+                            return _TransactionListItem(
+                              data: data,
+                              primaryColor: kPrimaryColor,
+                            );
+                          },
+                        );
+                      },
                     ),
-                  ),
+                  ],
+                ),
+              ),
+            )
+        )
+      ],
+    );
+  }
+}
 
+// ====================================================
+// WIDGET ITEM TRANSAKSI (SAMA DENGAN SEBELUMNYA)
+// ====================================================
+class _TransactionListItem extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final Color primaryColor;
 
-                  const SizedBox(height: 50),
+  const _TransactionListItem({required this.data, required this.primaryColor});
 
-                  // ... (No Transactions Yet Box) ...
+  String formatCurrency(double amount) {
+    return NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp',
+      decimalDigits: 0,
+    ).format(amount);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isIncome = data['type'] == 'income';
+    final double amount = (data['amount'] ?? 0).toDouble();
+    final String description = data['description'] ?? data['categoryName'] ?? '-';
+    final Timestamp timestamp = data['timestamp'] as Timestamp;
+    final DateTime date = timestamp.toDate();
+
+    final String formattedAmount = formatCurrency(amount);
+    final String formattedDate = DateFormat('dd MMM').format(date);
+    final IconData icon = isIncome ? Icons.attach_money : Icons.shopping_bag;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 5,
+                offset: const Offset(0, 3)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: primaryColor),
+            ),
+            const SizedBox(width: 15),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(description,
+                      style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600, fontSize: 16)),
+                  Text(formattedDate,
+                      style: GoogleFonts.poppins(
+                          color: Colors.grey, fontSize: 12)),
                 ],
               ),
             ),
+
+            Text(
+              (isIncome ? "+" : "-") + formattedAmount,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: isIncome ? primaryColor : Colors.red,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+// ====================================================
+// WIDGET INCOME EXPENSE CARD (CUSTOM)
+// ====================================================
+
+class _IncomeExpenseCard extends StatelessWidget {
+  final double totalIncome;
+  final double totalExpense;
+
+  const _IncomeExpenseCard({
+    required this.totalIncome,
+    required this.totalExpense,
+  });
+
+  String formatCurrency(double amount) {
+    return NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp',
+      decimalDigits: 0,
+    ).format(amount);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
-        )
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          // Income
+          _buildPill(
+            icon: Icons.arrow_upward,
+            label: "Income",
+            amount: formatCurrency(totalIncome),
+            color: kPrimaryColor,
+          ),
+          // Separator
+          Container(
+            height: 50,
+            width: 1,
+            color: Colors.grey[300],
+          ),
+          // Expense
+          _buildPill(
+            icon: Icons.arrow_downward,
+            label: "Expense",
+            amount: formatCurrency(totalExpense),
+            color: Colors.red,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPill({
+    required IconData icon,
+    required String label,
+    required String amount,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          amount,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
       ],
     );
   }
