@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+// Asumsi path ini benar. Jika tidak, sesuaikan.
 import 'package:dompetku/presentation/widgets/date_picker_calender.dart';
+// Asumsi path ini benar. Jika tidak, sesuaikan.
 import 'package:dompetku/providers/transaction_provider.dart';
 
 // --- DEFINISI WARNA ---
@@ -23,64 +25,225 @@ class _TransactionsPageState extends State<TransactionsPage> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<TransactionProvider>(context);
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
 
-    // FILTER TRANSAKSI (Income / Expense)
-    // TAMBAHAN: Filter berdasarkan tanggal jika ada yang dipilih
+    // FILTER
     final filteredTransactions = provider.transactions.where((t) {
       // Filter tipe (Income/Expense)
-      bool typeMatch = false;
-      if (selectedTab == 0) {
-        typeMatch = t["type"] == "income";
-      } else {
-        // Tipe tidak 'income' dianggap 'expense' atau lainnya
-        typeMatch = t["type"] != "income";
-      }
+      bool typeMatch = selectedTab == 0
+          ? t["type"] == "income"
+          : t["type"] != "income";
 
       if (!typeMatch) return false;
 
       // Filter tanggal
       if (selectedDate == null) return true;
 
-      // Asumsi data transaksi memiliki key 'date' string (cth: "01/12/2025")
-      // atau 'timestamp' (Timestamp/DateTime) yang bisa dikonversi.
-      // Karena item transaksi menggunakan 'date', kita akan pakai itu.
-      final String transactionDateStr = t['date'] ?? '';
-      if (transactionDateStr.isEmpty) return false;
+      final String dateStr = t["date"] ?? "";
+      if (dateStr.isEmpty) return false;
 
       try {
-        // Asumsi format 'dd/MM/yyyy' atau yang serupa,
-        // Ini adalah contoh sederhana, mungkin perlu parsing yang lebih kuat
-        final parts = transactionDateStr.split('/');
+        final parts = dateStr.split('/');
         if (parts.length != 3) return false;
-        final int day = int.parse(parts[0]);
-        final int month = int.parse(parts[1]);
-        final int year = int.parse(parts[2]);
+        final day = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+        final year = int.parse(parts[2]);
 
-        return day == selectedDate!.day &&
-            month == selectedDate!.month &&
-            year == selectedDate!.year;
+        // Asumsi format tanggal di data adalah 'dd/MM/yyyy'
+        // Jika format berbeda (misal: 'd-M-y'), logika parsing harus disesuaikan.
+        return (selectedDate!.day == day &&
+            selectedDate!.month == month &&
+            selectedDate!.year == year);
       } catch (_) {
         return false;
       }
     }).toList();
 
-    // Urutkan transaksi berdasarkan tanggal, terbaru di atas
-    filteredTransactions.sort((a, b) {
-      // Jika ada 'timestamp' (seperti di kode pertama), itu lebih baik untuk sorting
-      // Karena kita tidak melihat key 'timestamp' di sini, kita lewati sorting.
-      // Jika Anda punya 'timestamp' (seperti Timestamp dari Firebase), ganti baris ini:
-      /*
-      final ta = a['timestamp'];
-      final tb = b['timestamp'];
-      if (ta == null || tb == null) return 0;
-      return (tb as Timestamp).toDate().compareTo((ta as Timestamp).toDate());
-      */
-      return 0; // Tidak diurutkan jika hanya punya key 'date' string
-    });
-
-
     final double statusBarHeight = MediaQuery.of(context).padding.top;
-    const double tabHeight = 70;
+
+    // ============================================================
+    // ====================== L A N D S C A P E ====================
+    // ============================================================
+    if (isLandscape) {
+      return Scaffold(
+        // === PERBAIKAN: Mengganti background Scaffold menjadi LightBackgroundColor ===
+        // Ini mencegah munculnya warna biru saat scrolling atau overscroll.
+        backgroundColor: kLightBackgroundColor,
+        // ==========================================================================
+        body: SafeArea(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                // HEADER BIRU (Container ini tetap biru)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+                  color: kPrimaryColor, // Kontainer ini yang memberi warna biru
+                  child: Column(
+                    children: [
+                      Text(
+                        "Transaction",
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // TOTAL BALANCE
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Center(
+                          child: Text(
+                            provider.formatCurrency(provider.totalBalance),
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // TAB BUTTONS
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      Expanded(child: _buildTab(0, "Income", Icons.arrow_outward_rounded)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildTab(1, "Expense", Icons.south_west_rounded)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 30),
+
+                // BODY PUTIH (Container ini sudah berada di atas background putih)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 80), // Padding disesuaikan
+                  // Warna background putih dihilangkan, karena sudah ditangani oleh Scaffold
+                  // Jika ingin mempertahankan efek lekukan di atas, tetap gunakan BoxDecoration
+                  decoration: const BoxDecoration(
+                    color: kLightBackgroundColor, // Menggunakan warna yang sama dengan Scaffold
+                    // Lekukan dihilangkan karena container ini mengikuti lebar layar
+                    // dan Scaffold sudah putih
+                  ),
+                  child: Column(
+                    children: [
+                      // HEADER HISTORY
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'History',
+                            style: GoogleFonts.poppins(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          GestureDetector(
+                            onTap: () async {
+                              final result = await showDialog(
+                                context: context,
+                                builder: (_) => const DatePickerCalendar(),
+                              );
+
+                              if (result != null && result is DateTime) {
+                                setState(() => selectedDate = result);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.calendar_month,
+                                color: kActiveButtonColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // FILTER TANGGAL
+                      if (selectedDate != null)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Tanggal: ${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+                              style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () =>
+                                  setState(() => selectedDate = null),
+                              child: const Icon(
+                                Icons.close,
+                                size: 18,
+                                color: Colors.red,
+                              ),
+                            )
+                          ],
+                        ),
+
+                      const SizedBox(height: 20),
+
+                      // LIST TRANSAKSI
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: filteredTransactions.length,
+                        itemBuilder: (context, index) {
+                          return _transactionItem(
+                              filteredTransactions[index], provider);
+                        },
+                      ),
+
+                      if (filteredTransactions.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 40.0),
+                            child: Text(
+                              "Belum ada transaksi di tab ini${selectedDate != null ? ' pada tanggal ini' : ''}",
+                              style: GoogleFonts.poppins(
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ============================================================
+    // ======================== P O R T R A I T ====================
+    // ============================================================
+
+    final double tabHeight = 70;
     const double tabTopPosition = 180;
     const double verticalGap = 60;
 
@@ -94,7 +257,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
       backgroundColor: kPrimaryColor,
       body: Stack(
         children: [
-          // ================= HEADER BIRU =================
+          // HEADER BIRU
           Column(
             children: [
               Container(
@@ -114,7 +277,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ===== TOTAL BALANCE DARI FIREBASE =====
+                    // TOTAL BALANCE
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 18),
@@ -139,119 +302,122 @@ class _TransactionsPageState extends State<TransactionsPage> {
             ],
           ),
 
-          // ================= BODY PUTIH =================
+          // BODY PUTIH
           Positioned.fill(
             top: bodyWhiteTopPosition,
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: kLightBackgroundColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(50),
-                  topRight: Radius.circular(50),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Teks History
-                      Text(
-                        'History',
-                        style: GoogleFonts.poppins(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      // Icon Kalender
-                      GestureDetector(
-                        onTap: () async {
-                          final result = await showDialog(
-                            context: context,
-                            builder: (_) => const DatePickerCalendar(),
-                          );
-
-                          if (result != null && result is DateTime) {
-                            setState(() => selectedDate = result);
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.calendar_month,
-                            color: kActiveButtonColor,
-                          ),
-                        ),
-                      ),
-                    ],
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: kLightBackgroundColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(50),
+                    topRight: Radius.circular(50),
                   ),
-                  const SizedBox(height: 10),
+                ),
+                child: Column(
+                  children: [
+                    // HEADER HISTORY
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'History',
+                          style: GoogleFonts.poppins(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            final result = await showDialog(
+                              context: context,
+                              builder: (_) => const DatePickerCalendar(),
+                            );
 
-                  if (selectedDate != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "Tanggal Filter: ${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                            if (result != null && result is DateTime) {
+                              setState(() => selectedDate = result);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.calendar_month,
+                              color: kActiveButtonColor,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          // Tombol clear filter tanggal
-                          GestureDetector(
-                            onTap: () => setState(() => selectedDate = null),
-                            child: const Icon(Icons.close,
-                                size: 18, color: Colors.red),
-                          )
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
 
-                  // ============= LIST TRANSAKSI =============
-                  Expanded(
-                    child: filteredTransactions.isEmpty
+                    const SizedBox(height: 10),
+
+                    // FILTER DATE
+                    if (selectedDate != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Tanggal: ${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => setState(() => selectedDate = null),
+                              child: const Icon(Icons.close,
+                                  size: 18, color: Colors.red),
+                            )
+                          ],
+                        ),
+                      ),
+
+                    // Mengganti SizedBox dengan properti height statis
+                    // menjadi penyesuaian yang lebih dinamis untuk List/Pesan Kosong
+                    filteredTransactions.isEmpty
                         ? Center(
-                      child: Text(
-                        "Belum ada transaksi di tab ini${selectedDate != null ? ' pada tanggal ini' : ''}",
-                        style: GoogleFonts.poppins(
-                            color: Colors.grey[700],
-                            fontWeight: FontWeight.w600),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 40.0),
+                        child: Text(
+                          "Belum ada transaksi di tab ini${selectedDate != null ? ' pada tanggal ini' : ''}",
+                          style: GoogleFonts.poppins(
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w600),
+                        ),
                       ),
                     )
                         : ListView.builder(
                       itemCount: filteredTransactions.length,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(), // Diubah menjadi NeverScrollableScrollPhysics karena sudah di dalam SingleChildScrollView
                       itemBuilder: (context, index) {
                         final t = filteredTransactions[index];
                         return _transactionItem(t, provider);
                       },
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
 
-          // ================= TAB FLOATING =================
+          // TAB FLOATING
           Positioned(
             top: statusBarHeight + tabTopPosition,
             left: 20,
             right: 20,
             child: Row(
               children: [
-                Expanded(
-                    child: _buildTab(
-                        0, "Income", Icons.arrow_outward_rounded)),
+                Expanded(child: _buildTab(0, "Income", Icons.arrow_outward)),
                 const SizedBox(width: 12),
-                Expanded(
-                    child: _buildTab(
-                        1, "Expense", Icons.south_west_rounded)),
+                Expanded(child: _buildTab(1, "Expense", Icons.south_west)),
               ],
             ),
           ),
@@ -260,25 +426,26 @@ class _TransactionsPageState extends State<TransactionsPage> {
     );
   }
 
-  // ====================================================
-  // ITEM TRANSAKSI (MODIFIED WITH ICON AND DATE)
-  // ====================================================
-  Widget _transactionItem(
-      Map<String, dynamic> t, TransactionProvider provider) {
-    final bool isIncome = t["type"] == "income";
-    final double amount = (t["amount"] ?? 0).toDouble();
-    final String description = t["description"] ?? "-";
-    // Asumsi key 'date' ada di data, seperti yang dipakai di kode pertama.
-    final String date = t["date"] ?? '-';
+// ITEM TRANSAKSI
+  Widget _transactionItem(Map<String, dynamic> t, TransactionProvider provider) {
+    final isIncome = t["type"] == "income";
+    final double amount = (t["amount"] is int)
+        ? (t["amount"] as int).toDouble()
+        : (t["amount"] ?? 0.0).toDouble();
 
-    // Pilihan ikon sederhana (mengikuti kode pertama)
-    final IconData icon = isIncome ? Icons.attach_money : Icons.shopping_bag;
+    final String description = t["description"] ?? "-";
+    final String date = t["date"] ?? "-";
+
+    // === MENGGUNAKAN LOGIKA IKON ANDA ===
+    final IconData icon =
+    isIncome ? Icons.attach_money : Icons.shopping_bag_outlined;
+    // ===================================
 
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: kLightBackgroundColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -290,13 +457,14 @@ class _TransactionsPageState extends State<TransactionsPage> {
       ),
       child: Row(
         children: [
-          // CONTAINER ICON
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-                color: kPrimaryColor.withOpacity(0.1),
+                color: kLightBackgroundColor,
                 borderRadius: BorderRadius.circular(10)),
+            // === MENGGUNAKAN VARIABEL IKON ===
             child: Icon(icon, color: kPrimaryColor),
+            // ===============================
           ),
           const SizedBox(width: 15),
 
@@ -304,7 +472,6 @@ class _TransactionsPageState extends State<TransactionsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // NAMA / DESKRIPSI
                 Text(
                   description,
                   style: GoogleFonts.poppins(
@@ -312,15 +479,17 @@ class _TransactionsPageState extends State<TransactionsPage> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                // TANGGAL
-                Text(date,
-                    style: GoogleFonts.poppins(
-                        color: Colors.grey, fontSize: 12)),
+                Text(
+                  date,
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey,
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
 
-          // JUMLAH
           Text(
             (isIncome ? "+" : "-") + provider.formatCurrency(amount),
             style: GoogleFonts.poppins(
@@ -334,11 +503,9 @@ class _TransactionsPageState extends State<TransactionsPage> {
     );
   }
 
-  // ====================================================
   // TAB
-  // ====================================================
   Widget _buildTab(int index, String title, IconData icon) {
-    bool active = selectedTab == index;
+    final active = selectedTab == index;
 
     return GestureDetector(
       onTap: () => setState(() => selectedTab = index),

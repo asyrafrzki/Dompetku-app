@@ -88,205 +88,245 @@ class _DashboardContentState extends State<DashboardContent> {
     final String userName = _currentUser?.displayName ?? _currentUser?.email ?? "User";
     final double statusBarHeight = MediaQuery.of(context).padding.top;
 
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.fromLTRB(28, statusBarHeight + 20, 28, 40),
-          decoration: const BoxDecoration(
-            color: kPrimaryColor,
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(45),
-              bottomRight: Radius.circular(45),
-            ),
-          ),
+    final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+    // Tinggi Bottom Navigation Bar (asumsi 56.0) + padding bottom safe area
+    const double bottomNavBarDefaultHeight = 56.0;
+    final double bottomSafePadding = MediaQuery.of(context).padding.bottom;
+
+    // =========================================================
+    // WIDGET KONTEN PUTIH (dipisahkan agar mudah digunakan)
+    // =========================================================
+    Widget whiteContent(double bottomPadding) {
+      return Container(
+        color: kLightBackgroundColor,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, bottomPadding),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Top Row (Nama dan Notif button)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Hi, $userName",
-                    style: GoogleFonts.poppins(
-                      fontSize: 26,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+              const SizedBox(height: 45),
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Transactions",
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                   ),
-                  // Notif button
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const NotificationPage()),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFC4FFF9),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.notifications_none, size: 28),
-                    ),
-                  )
-                ],
+                ),
               ),
-              const SizedBox(height: 25),
-              // MEMANGGIL CARD DENGAN NILAI YANG DI-FILTER
-              _IncomeExpenseCard(
-                totalIncome: _totalIncomeFiltered,
-                totalExpense: _totalExpenseFiltered,
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-            child: Container(
-              color: kLightBackgroundColor,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+
+              const SizedBox(height: 20),
+
+              // TAB (Daily, Weekly, Monthly)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
+                decoration: BoxDecoration(
+                  color: kPrimaryColor,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    const SizedBox(height: 45),
-
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Transactions",
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // TAB (Daily, Weekly, Monthly)
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor,
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          TimeFrameButton(
-                            text: "Daily",
-                            selected: _selectedTab == 0,
-                            onTap: () {
-                              setState(() {
-                                _selectedTab = 0;
-                              });
-                            },
-                          ),
-                          TimeFrameButton(
-                            text: "Weekly",
-                            selected: _selectedTab == 1,
-                            onTap: () {
-                              setState(() {
-                                _selectedTab = 1;
-                              });
-                            },
-                          ),
-                          TimeFrameButton(
-                            text: "Monthly",
-                            selected: _selectedTab == 2,
-                            onTap: () {
-                              setState(() {
-                                _selectedTab = 2;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // ====================================================
-                    // LIST TRANSAKSI (DENGAN LOGIKA HITUNG TOTAL)
-                    // ====================================================
-                    StreamBuilder<QuerySnapshot>(
-                      stream: _getTransactionStream(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          // Tampilkan loading saat menunggu data
-                          return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
-                        }
-                        if (snapshot.hasError) {
-                          return Center(child: Text("Error: ${snapshot.error}"));
-                        }
-
-                        final transactions = snapshot.data?.docs ?? [];
-
-                        // === LOGIKA PENGHITUNGAN TOTAL BARU ===
-                        double currentIncome = 0.0;
-                        double currentExpense = 0.0;
-
-                        for (var doc in transactions) {
-                          final data = doc.data() as Map<String, dynamic>;
-                          final double amount = (data['amount'] ?? 0).toDouble();
-                          final String type = data['type'] ?? '';
-
-                          if (type == 'income') {
-                            currentIncome += amount;
-                          } else {
-                            currentExpense += amount;
-                          }
-                        }
-
-                        // Update state Total Income/Expense dan panggil build
-                        // Widget yang menggunakan _totalIncomeFiltered akan ter-rebuild
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (_totalIncomeFiltered != currentIncome || _totalExpenseFiltered != currentExpense) {
-                            setState(() {
-                              _totalIncomeFiltered = currentIncome;
-                              _totalExpenseFiltered = currentExpense;
-                            });
-                          }
+                    TimeFrameButton(
+                      text: "Daily",
+                      selected: _selectedTab == 0,
+                      onTap: () {
+                        setState(() {
+                          _selectedTab = 0;
                         });
-                        // =====================================
-
-                        if (transactions.isEmpty) {
-                          return const Padding(
-                            padding: EdgeInsets.only(top: 40),
-                            child: Text("Belum ada transaksi di periode ini."),
-                          );
-                        }
-
-                        return ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: transactions.length,
-                          itemBuilder: (context, index) {
-                            final data = transactions[index].data() as Map<String, dynamic>;
-                            return _TransactionListItem(
-                              data: data,
-                              primaryColor: kPrimaryColor,
-                            );
-                          },
-                        );
+                      },
+                    ),
+                    TimeFrameButton(
+                      text: "Weekly",
+                      selected: _selectedTab == 1,
+                      onTap: () {
+                        setState(() {
+                          _selectedTab = 1;
+                        });
+                      },
+                    ),
+                    TimeFrameButton(
+                      text: "Monthly",
+                      selected: _selectedTab == 2,
+                      onTap: () {
+                        setState(() {
+                          _selectedTab = 2;
+                        });
                       },
                     ),
                   ],
                 ),
               ),
-            )
-        )
+
+              const SizedBox(height: 30),
+
+              // LIST TRANSAKSI
+              StreamBuilder<QuerySnapshot>(
+                stream: _getTransactionStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text("Error: ${snapshot.error}"));
+                  }
+
+                  final transactions = snapshot.data?.docs ?? [];
+
+                  // LOGIKA PENGHITUNGAN TOTAL BARU
+                  double currentIncome = 0.0;
+                  double currentExpense = 0.0;
+
+                  for (var doc in transactions) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final double amount = (data['amount'] ?? 0).toDouble();
+                    final String type = data['type'] ?? '';
+
+                    if (type == 'income') {
+                      currentIncome += amount;
+                    } else {
+                      currentExpense += amount;
+                    }
+                  }
+
+                  // Update state Total Income/Expense
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_totalIncomeFiltered != currentIncome || _totalExpenseFiltered != currentExpense) {
+                      setState(() {
+                        _totalIncomeFiltered = currentIncome;
+                        _totalExpenseFiltered = currentExpense;
+                      });
+                    }
+                  });
+
+                  if (transactions.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 40),
+                      child: Text("Belum ada transaksi di periode ini."),
+                    );
+                  }
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: transactions.length,
+                    itemBuilder: (context, index) {
+                      final data = transactions[index].data() as Map<String, dynamic>;
+                      return _TransactionListItem(
+                        data: data,
+                        primaryColor: kPrimaryColor,
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // =========================================================
+    // WIDGET HEADER BIRU (dipisahkan agar mudah digunakan)
+    // =========================================================
+    Widget blueHeader(double topPadding, double bottomPadding) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.fromLTRB(28, topPadding, 28, bottomPadding),
+        decoration: const BoxDecoration(
+          color: kPrimaryColor,
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(45),
+            bottomRight: Radius.circular(45),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Hi, $userName",
+                  style: GoogleFonts.poppins(
+                    fontSize: 26,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const NotificationPage()),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFC4FFF9),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.notifications_none, size: 28),
+                  ),
+                )
+              ],
+            ),
+            const SizedBox(height: 25),
+            _IncomeExpenseCard(
+              totalIncome: _totalIncomeFiltered,
+              totalExpense: _totalExpenseFiltered,
+            ),
+          ],
+        ),
+      );
+    }
+
+
+    // =========================================================
+    // 4. PEMILIHAN LAYOUT BERDASARKAN ORIENTASI
+    // =========================================================
+
+    if (isLandscape) {
+      // === LAYOUT LANDSCAPE: SingleChildScrollView menyeluruh ===
+      return SingleChildScrollView(
+        child: Column(
+          children: [
+            // Perbaikan 2 (Landscape): Top Padding hanya 5. Lebih rapat ke atas.
+            blueHeader(5, 0),
+
+            // Jarak Vertikal yang nyaman antara Header dan konten putih (bisa 0 jika ingin mepet)
+            const SizedBox(height: 20),
+
+            // Konten Putih dengan padding bawah ekstra
+            whiteContent(bottomNavBarDefaultHeight + bottomSafePadding + 20),
+          ],
+        ),
+      );
+    }
+
+    // === LAYOUT PORTRAIT (FINAL) ===
+    // Perbaikan 1 (Portrait): Hapus SafeArea di sini agar Header Biru mengisi penuh area status bar
+    return Column(
+      children: [
+        // Top Padding: statusBarHeight + 10 (Agar Header Biru menutupi seluruh status bar dan ada padding ke bawah)
+        // Bottom Padding: 25 (Dikurangi dari 40 agar kartu Income/Expense naik sedikit)
+        blueHeader(statusBarHeight + 10, 25),
+
+        Expanded(
+            child: whiteContent(100)
+        ),
       ],
     );
   }
 }
 
 // ====================================================
-// WIDGET ITEM TRANSAKSI (SAMA DENGAN SEBELUMNYA)
+// WIDGET ITEM TRANSAKSI
 // ====================================================
 class _TransactionListItem extends StatelessWidget {
   final Map<String, dynamic> data;
