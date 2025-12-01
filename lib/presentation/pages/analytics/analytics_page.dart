@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'dart:math' as math;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+
 import 'package:dompetku/presentation/widgets/custom_page_header.dart';
 import 'package:dompetku/presentation/widgets/income_expense_summary.dart';
 import 'package:dompetku/presentation/widgets/bar_chart_widget.dart';
@@ -18,22 +22,12 @@ class AnalyticsPage extends StatefulWidget {
 }
 
 class _AnalyticsPageState extends State<AnalyticsPage> {
-  final double totalExpense = 520.00;
-  final double income = 10000.00;
-  int _selectedTimeFrame = 0;
+  final User? _currentUser = FirebaseAuth.instance.currentUser;
+  int _selectedTimeFrame = 0; // 0=Daily, 1=Weekly, 2=Monthly
 
-  // Data State dan Chart Data
+  // Data State dan Chart Data (Dihapus karena diganti data real-time)
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  final List<Map<String, dynamic>> chartData = [
-    {'day': 'Mon', 'income': 10.0, 'expense': 5.0},
-    {'day': 'Tue', 'income': 3.0, 'expense': 7.0},
-    {'day': 'Wed', 'income': 12.0, 'expense': 10.0},
-    {'day': 'Thu', 'income': 5.0, 'expense': 4.0},
-    {'day': 'Fri', 'income': 15.0, 'expense': 8.0},
-    {'day': 'Sat', 'income': 2.0, 'expense': 1.0},
-    {'day': 'Sun', 'income': 13.0, 'expense': 6.0},
-  ];
 
   @override
   void initState() {
@@ -47,112 +41,277 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     });
   }
 
+  // ====================================================
+  // LOGIKA WAKTU & DATABASE
+  // ====================================================
+
+  /// Menghitung tanggal awal dan akhir untuk query database
+  Map<String, DateTime> _getTimeFrame() {
+    final now = DateTime.now();
+    DateTime startDate;
+    DateTime endDate;
+
+    switch (_selectedTimeFrame) {
+      case 0: // Daily -> Untuk Bar Chart, kita tampilkan Weekly agar ada perbandingan
+        return _getTimeFrameForWeekly();
+
+      case 1: // Weekly
+        return _getTimeFrameForWeekly();
+
+      case 2: // Monthly
+        startDate = DateTime(now.year, now.month, 1);
+        // Akhir bulan (1 milidetik sebelum awal bulan berikutnya)
+        endDate = DateTime(now.year, now.month + 1, 1).subtract(const Duration(milliseconds: 1));
+        break;
+      default:
+      // Fallback: Weekly
+        return _getTimeFrameForWeekly();
+    }
+    return {'start': startDate, 'end': endDate};
+  }
+
+  Map<String, DateTime> _getTimeFrameForWeekly() {
+    final now = DateTime.now();
+    // Cari hari Senin (weekday 1) di minggu ini
+    final daysToSubtract = now.weekday - 1;
+    final startDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: daysToSubtract));
+    // Akhir hari Minggu (1 milidetik sebelum hari Senin minggu depan)
+    final endDate = startDate.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+    return {'start': startDate, 'end': endDate};
+  }
+
+  Stream<QuerySnapshot> _getTransactionStream() {
+    if (_currentUser == null) {
+      return const Stream.empty();
+    }
+
+    final timeFrame = _getTimeFrame();
+    final startTimestamp = timeFrame['start'];
+    final endTimestamp = timeFrame['end'];
+
+    return FirebaseFirestore.instance
+        .collection("users")
+        .doc(_currentUser!.uid)
+        .collection("transactions")
+        .where('timestamp', isGreaterThanOrEqualTo: startTimestamp)
+        .where('timestamp', isLessThanOrEqualTo: endTimestamp)
+        .orderBy('timestamp', descending: true)
+        .snapshots();
+  }
+
+  // ====================================================
+  // LOGIKA AGREGASI DATA UNTUK CHART
+  // ====================================================
+
+  List<Map<String, dynamic>> _aggregateChartData(List<QueryDocumentSnapshot> transactions) {
+    final Map<String, double> incomeMap = {};
+    final Map<String, double> expenseMap = {};
+    final List<Map<String, dynamic>> result = [];
+
+    // Tentukan format key untuk agregasi (Day Name/Month Name)
+    String getGroupingKey(DateTime date) {
+      if (_selectedTimeFrame == 2) { // Monthly
+        return DateFormat('MMM').format(date); // Contoh: Jan, Feb
+      }
+      // Weekly/Daily -> Grouping by Day Name
+      return DateFormat('E').format(date); // Contoh: Mon, Tue
+    }
+
+    // Hitung total per group
+    for (var doc in transactions) {
+      final data = doc.data() as Map<String, dynamic>;
+      final double amount = (data['amount'] ?? 0).toDouble();
+      final String type = data['type'] ?? '';
+      final Timestamp? ts = data['timestamp'] as Timestamp?;
+
+      if (ts == null) continue;
+
+      final key = getGroupingKey(ts.toDate());
+
+      if (type == 'income') {
+        incomeMap[key] = (incomeMap[key] ?? 0) + amount;
+      } else {
+        expenseMap[key] = (expenseMap[key] ?? 0) + amount;
+      }
+    }
+
+    // Urutan default untuk Weekly Chart (Senin-Minggu)
+    final List<String> defaultWeeklyOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    // Gabungkan dan susun data ke format Chart
+    final Set<String> allKeys = {...incomeMap.keys, ...expenseMap.keys};
+
+    if (_selectedTimeFrame != 2) {
+      // Untuk Weekly/Daily, gunakan urutan hari default (7 hari)
+      for (var day in defaultWeeklyOrder) {
+        result.add({
+          'day': day,
+          'income': incomeMap[day] ?? 0.0,
+          'expense': expenseMap[day] ?? 0.0,
+        });
+      }
+    } else {
+      // Untuk Monthly, gunakan semua bulan yang memiliki data
+      for (var monthKey in allKeys) {
+        result.add({
+          'day': monthKey,
+          'income': incomeMap[monthKey] ?? 0.0,
+          'expense': expenseMap[monthKey] ?? 0.0,
+        });
+      }
+    }
+
+    return result;
+  }
+
+  // ====================================================
+  // WIDGET UTAMA
+  // ====================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: secondaryColor,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            CustomPageHeader(
-              title: "Analysis",
-              onBack: () => Navigator.pop(context),
-            ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _getTransactionStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: primaryColor));
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
 
-            const SizedBox(height: 30),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TimeFrameButton(
-                    text: "Daily",
-                    selected: _selectedTimeFrame == 0,
-                    onTap: () => _selectTimeFrame(0),
-                  ),
-                  const SizedBox(width: 10),
-                  TimeFrameButton(
-                    text: "Weekly",
-                    selected: _selectedTimeFrame == 1,
-                    onTap: () => _selectTimeFrame(1),
-                  ),
-                  const SizedBox(width: 10),
-                  TimeFrameButton(
-                    text: "Monthly",
-                    selected: _selectedTimeFrame == 2,
-                    onTap: () => _selectTimeFrame(2),
-                  ),
-                ],
-              ),
-            ),
+          final transactions = snapshot.data?.docs ?? [];
+          double currentIncome = 0.0;
+          double currentExpense = 0.0;
 
-            const SizedBox(height: 30),
+          // 1. HITUNG TOTAL INCOME & EXPENSE (Untuk Summary Card)
+          for (var doc in transactions) {
+            final data = doc.data() as Map<String, dynamic>;
+            final double amount = (data['amount'] ?? 0).toDouble();
+            final String type = data['type'] ?? '';
 
-            // Card Utama Analisis
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                padding: const EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+            if (type == 'income') {
+              currentIncome += amount;
+            } else {
+              currentExpense += amount;
+            }
+          }
+
+          // 2. AGREGASI DATA UNTUK CHART
+          final List<Map<String, dynamic>> aggregatedChartData =
+          _aggregateChartData(transactions);
+
+
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                CustomPageHeader(
+                  title: "Analysis",
+                  onBack: () => Navigator.pop(context),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Income & Expenses",
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+
+                const SizedBox(height: 30),
+
+                // Tombol Time Frame
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: primaryColor,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TimeFrameButton(
+                        text: "Daily",
+                        selected: _selectedTimeFrame == 0,
+                        onTap: () => _selectTimeFrame(0),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      height: 200,
-                      child: BarChartWidget(data: chartData),
-                    ),
-                    const SizedBox(height: 40),
-                    IncomeExpenseSummary(
-                      income: income,
-                      expense: totalExpense,
-                    ),
-                  ],
+                      const SizedBox(width: 10),
+                      TimeFrameButton(
+                        text: "Weekly",
+                        selected: _selectedTimeFrame == 1,
+                        onTap: () => _selectTimeFrame(1),
+                      ),
+                      const SizedBox(width: 10),
+                      TimeFrameButton(
+                        text: "Monthly",
+                        selected: _selectedTimeFrame == 2,
+                        onTap: () => _selectTimeFrame(2),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+
+                const SizedBox(height: 30),
+
+                // Card Utama Analisis (Chart dan Summary)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 5,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Income & Expenses",
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          height: 200,
+                          // MENGGUNAKAN DATA REAL-TIME AGREGASI
+                          child: BarChartWidget(data: aggregatedChartData),
+                        ),
+                        const SizedBox(height: 40),
+                        // MENGGUNAKAN DATA TOTAL REAL-TIME
+                        IncomeExpenseSummary(
+                          income: currentIncome,
+                          expense: currentExpense,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 50),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  // Logika dialog kalender (dibiarkan di sini karena menggunakan state)
+  // Logika dialog kalender (dibiarkan di sini)
   void _showCalendarDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) {
-        // Placeholder dialog kalender
         return Dialog(
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -161,12 +320,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               children: [
                 Text("Calendar Dialog", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
-                // Menggunakan isSameDay di sini yang mungkin menjadi sumber error
                 TableCalendar(
                   focusedDay: _focusedDay,
                   firstDay: DateTime.utc(2020, 1, 1),
                   lastDay: DateTime.utc(2030, 12, 31),
-                  // isSameDay adalah fungsi utilitas dari package:table_calendar
                   selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                   onDaySelected: (selected, focused) {
                     setState(() {
