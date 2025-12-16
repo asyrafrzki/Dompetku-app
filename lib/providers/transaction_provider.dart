@@ -16,7 +16,7 @@ class TransactionProvider with ChangeNotifier {
   }
 
   // ===============================
-  // LIST TRANSACTIONS (REALTIME)
+  // LIST TRANSACTIONS (REALTIME) - KHUSUS TRANSAKSI (BUKAN GOAL PROGRESS)
   // ===============================
   List<Map<String, dynamic>> transactions = [];
 
@@ -24,7 +24,6 @@ class TransactionProvider with ChangeNotifier {
     loadTransactions();
   }
 
-  // LOAD DATA dari Firebase
   void loadTransactions() {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -36,12 +35,14 @@ class TransactionProvider with ChangeNotifier {
         .orderBy("timestamp", descending: true)
         .snapshots()
         .listen((snapshot) {
-      transactions = snapshot.docs.map((doc) {
-        return {
-          "id": doc.id,
-          ...doc.data() as Map<String, dynamic>,
-        };
-      }).toList();
+      // FILTER: buang goal_progress dari list transaksi
+      transactions = snapshot.docs
+          .map((doc) => {
+        "id": doc.id,
+        ...doc.data() as Map<String, dynamic>,
+      })
+          .where((t) => t["type"] != "goal_progress" && t["isGoals"] != true)
+          .toList();
 
       notifyListeners();
     });
@@ -60,12 +61,12 @@ class TransactionProvider with ChangeNotifier {
   }
 
   // ===============================
-  // TOTAL BALANCE
+  // TOTAL BALANCE (HANYA TRANSAKSI)
   // ===============================
   double get totalBalance {
     double sum = 0;
     for (var t in transactions) {
-      double amount = (t['amount'] ?? 0).toDouble();
+      final double amount = (t['amount'] ?? 0).toDouble();
       if (t['type'] == 'income') {
         sum += amount;
       } else {
@@ -76,7 +77,7 @@ class TransactionProvider with ChangeNotifier {
   }
 
   // ===============================
-  // TOTAL INCOME
+  // TOTAL INCOME (HANYA TRANSAKSI)
   // ===============================
   double get totalIncome {
     double sum = 0;
@@ -114,20 +115,15 @@ class TransactionProvider with ChangeNotifier {
     return sum;
   }
 
-  // ===============================
-  // UNIVERSAL: TOTAL BY CATEGORY
-  // dipakai UI kamu: provider.totalForCategory(title, isIncome)
-  // ===============================
+  // UNIVERSAL TOTAL BY CATEGORY
   double totalForCategory(String category, bool isIncome) {
-    if (isIncome) {
-      return totalIncomeForCategory(category);
-    } else {
-      return totalExpenseForCategory(category);
-    }
+    return isIncome
+        ? totalIncomeForCategory(category)
+        : totalExpenseForCategory(category);
   }
 
   // ===============================
-  // SAVE TRANSACTION
+  // SAVE (TRANSACTION / GOAL PROGRESS)
   // ===============================
   Future<String?> saveTransaction({
     required String date,
@@ -144,13 +140,23 @@ class TransactionProvider with ChangeNotifier {
       return "Pengguna tidak terautentikasi.";
     }
 
-    final double amount =
-        double.tryParse(amountString.replaceAll(",", ".")) ?? 0;
+    // Parsing amount: aman buat "10.000", "10,000", "10000"
+    final cleaned = amountString.replaceAll(RegExp(r'[^0-9]'), '');
+    final double amount = double.tryParse(cleaned) ?? 0;
 
-    String transactionType = "expense"; // default
-    if (category["isGoals"] == true) {
+    if (amount <= 0) {
+      _setSaving(false);
+      return "Amount tidak valid.";
+    }
+
+    final bool isGoals = category["isGoals"] == true;
+    final bool isIncome = category["isIncome"] == true;
+
+    // Tentukan type
+    String transactionType = "expense";
+    if (isGoals) {
       transactionType = "goal_progress";
-    } else if (category["isIncome"] == true) {
+    } else if (isIncome) {
       transactionType = "income";
     }
 
@@ -160,15 +166,41 @@ class TransactionProvider with ChangeNotifier {
       'amount': amount,
       'description': description.trim(),
       'categoryName': category["name"],
-      'isIncome': category["isIncome"],
-      'isGoals': category["isGoals"],
+      'isIncome': isIncome,
+      'isGoals': isGoals,
       'type': transactionType,
       'timestamp': FieldValue.serverTimestamp(),
     };
 
-    if (goalId != null) data['goalId'] = goalId;
-
     try {
+      // =========================
+      // CASE 1: GOAL PROGRESS -> SIMPAN KE goals/{goalId}/progress
+      // =========================
+      if (isGoals) {
+        if (goalId == null || goalId.trim().isEmpty) {
+          _setSaving(false);
+          return "goalId wajib diisi untuk progress goals.";
+        }
+
+        await _firestore
+            .collection("users")
+            .doc(user.uid)
+            .collection("goals")
+            .doc(goalId)
+            .collection("progress")
+            .add({
+          // ga perlu isIncome/isGoals kalau kamu mau lebih clean, tapi boleh tetap simpan
+          ...data,
+          "type": "goal_progress",
+        });
+
+        _setSaving(false);
+        return null;
+      }
+
+      // =========================
+      // CASE 2: TRANSAKSI BIASA -> SIMPAN KE transactions
+      // =========================
       await _firestore
           .collection("users")
           .doc(user.uid)

@@ -20,72 +20,121 @@ class CategoriesPage extends StatelessWidget {
 
     // Warna utama dari UI Anda
     const Color primaryColor = Color(0xFF07BEB8);
-    const Color secondaryColor =  Color(0xFFF8FFF2);
+    const Color secondaryColor = Color(0xFFF8FFF2);
 
     return Scaffold(
       backgroundColor: primaryColor,
-      body: Column(
-        children: [
-          // Header dengan Teks "Categories"
-          const SizedBox(height: 60),
-          Padding(
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 20,
-              bottom: 20,
-            ),
-            child: const Text(
-              'Categories',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
+      body: OrientationBuilder(
+        builder: (context, orientation) {
+          final isLandscape = orientation == Orientation.landscape;
 
-          const SizedBox(height: 90),
-          Expanded(
-            child: Container(
-              // Container besar di bawah header
-              decoration: const BoxDecoration(
-                color: secondaryColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(50),
-                  topRight: Radius.circular(50),
+          // ✅ hanya beda di landscape
+          final double headerTopSpace = isLandscape ? 10 : 60;
+          final double headerBottomSpace = isLandscape ? 16 : 90;
+          final int crossAxisCount = isLandscape ? 4 : 3;
+          final double childAspectRatio = isLandscape ? 1.25 : 0.9;
+
+          return Column(
+            children: [
+              // Header dengan Teks "Categories"
+              SizedBox(height: headerTopSpace),
+              Padding(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top + (isLandscape ? 6 : 20),
+                  bottom: isLandscape ? 10 : 20,
+                ),
+                child: Text(
+                  'Categories',
+                  style: TextStyle(
+                    fontSize: isLandscape ? 18 : 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              padding: const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                  childAspectRatio: 0.9,
-                ),
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  final category = categories[index];
-                  return _CategoryGridItem(
-                    name: category['name'],
-                    icon: category['icon'],
-                    color: primaryColor,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TransactionListPage(
-                            categoryName: category['name'],
-                            isIncome: category['isIncome'],
-                          ),
-                        ),
+
+              SizedBox(height: headerBottomSpace),
+
+              Expanded(
+                child: Container(
+                  // Container besar di bawah header
+                  decoration: const BoxDecoration(
+                    color: secondaryColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(50),
+                      topRight: Radius.circular(50),
+                    ),
+                  ),
+
+                  // ✅ portrait: tetap GridView seperti kamu
+                  // ✅ landscape: bungkus scroll supaya bisa geser kebawah
+                  padding: const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
+                  child: isLandscape
+                      ? SingleChildScrollView(
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 15,
+                        mainAxisSpacing: 15,
+                        childAspectRatio: childAspectRatio,
+                      ),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        return _CategoryGridItem(
+                          name: category['name'],
+                          icon: category['icon'],
+                          color: primaryColor,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => TransactionListPage(
+                                  categoryName: category['name'],
+                                  isIncome: category['isIncome'],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  )
+                      : GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
+                      childAspectRatio: childAspectRatio,
+                    ),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return _CategoryGridItem(
+                        name: category['name'],
+                        icon: category['icon'],
+                        color: primaryColor,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TransactionListPage(
+                                categoryName: category['name'],
+                                isIncome: category['isIncome'],
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
