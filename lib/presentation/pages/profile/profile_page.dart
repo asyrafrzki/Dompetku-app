@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import 'package:dompetku/presentation/pages/profile/edit_profile_page.dart';
 import 'package:dompetku/presentation/widgets/logout_confirmation_dialog.dart';
 import 'package:dompetku/presentation/pages/auth/login_page.dart';
+import 'package:provider/provider.dart';
+import 'package:dompetku/providers/profile_provider.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -23,110 +24,129 @@ class ProfilePage extends StatelessWidget {
     const Color primaryColor = Color(0xFF07BEB8);
     const Color secondaryColor = Color(0xFFF8FFF2);
 
-    return Scaffold(
-      backgroundColor: primaryColor,
-      body: Column(
-        children: [
-          const _ProfileHeader(primaryColor: primaryColor),
+    // Menggunakan Consumer untuk mendapatkan data profil
+    return Consumer<ProfileProvider>(
+      builder: (context, provider, child) {
+        final userName = provider.currentUserName;
 
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: secondaryColor,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(50),
-                  topRight: Radius.circular(50),
-                ),
-              ),
-              child: ListView(
-                padding:
-                const EdgeInsets.only(top: 100, left: 20, right: 20),
-                children: [
-                  // ITEM EDIT PROFILE
-                  _ProfileMenuItem(
-                    icon: Icons.edit_note,
-                    title: 'Edit Profile',
-                    color: primaryColor,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const EditProfilePage()),
-                      );
-                    },
+        return Scaffold(
+          backgroundColor: primaryColor,
+          body: Column(
+            children: [
+              // Mengirim userName ke Header
+              _ProfileHeader(primaryColor: primaryColor, userName: userName),
+
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: secondaryColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(50),
+                      topRight: Radius.circular(50),
+                    ),
                   ),
-                  const SizedBox(height: 20),
-
-                  // ITEM LOGOUT
-                  _ProfileMenuItem(
-                    icon: Icons.logout,
-                    title: 'Logout',
-                    color: primaryColor,
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return LogoutConfirmationDialog(
-                            onLogoutConfirmed: () => _logout(context),
+                  child: ListView(
+                    padding:
+                    const EdgeInsets.only(top: 100, left: 20, right: 20),
+                    children: [
+                      // ITEM EDIT PROFILE
+                      _ProfileMenuItem(
+                        icon: Icons.edit_note,
+                        title: 'Edit Profile',
+                        color: primaryColor,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const EditProfilePage()),
                           );
                         },
-                      );
-                    },
+                      ),
+                      const SizedBox(height: 20),
+
+                      // ITEM LOGOUT
+                      _ProfileMenuItem(
+                        icon: Icons.logout,
+                        title: 'Logout',
+                        color: primaryColor,
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return LogoutConfirmationDialog(
+                                onLogoutConfirmed: () => _logout(context),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          )
-        ],
-      ),
+                ),
+              )
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
-// ---------------------- PROFILE HEADER ----------------------
+// ---------------------- PROFILE HEADER (PERBAIKAN OVERFLOW) ----------------------
 class _ProfileHeader extends StatelessWidget {
   final Color primaryColor;
+  final String userName; // Tambahkan userName
 
-  const _ProfileHeader({required this.primaryColor});
+  const _ProfileHeader({required this.primaryColor, required this.userName});
 
   @override
   Widget build(BuildContext context) {
-    final double headerHeight =
-        MediaQuery.of(context).size.height * 0.35;
+    final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
-    return Container(
-      width: double.infinity,
-      height: headerHeight,
-      color: primaryColor,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(height: MediaQuery.of(context).padding.top + 10),
-          const Text(
-            'Profile',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+    // Batasan Tinggi Maksimal untuk menghindari overflow di landscape
+    final double headerMaxHeight = isLandscape ? 200 : MediaQuery.of(context).size.height * 0.35;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: headerMaxHeight,
+      ),
+      child: Container(
+        width: double.infinity,
+        color: primaryColor,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(height: MediaQuery.of(context).padding.top + (isLandscape ? 5 : 10)),
+            const Text(
+              'Profile',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-          ),
-          const Spacer(),
-          const CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.white,
-            child: Icon(Icons.person, size: 50, color: Colors.grey),
-          ),
-          const SizedBox(height: 5),
-          const Text(
-            'User',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
+
+            // Spacer yang dikondisikan
+            if (!isLandscape) const Spacer(),
+
+            // Konten utama
+            const CircleAvatar(
+              radius: 40,
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, size: 50, color: Colors.grey),
             ),
-          ),
-          const SizedBox(height: 20),
-        ],
+            const SizedBox(height: 5),
+            Text(
+              userName, // Menggunakan userName dari provider
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
