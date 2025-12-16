@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class IncomeExpenseSummary extends StatelessWidget {
   final double income;
   final double expense;
-  final Color primaryColor = const Color(0xFF07BEB8);
-  final Color expenseColor = const Color(0xFF2563EB); // Biru untuk expense
 
   const IncomeExpenseSummary({
     super.key,
@@ -18,8 +17,8 @@ class IncomeExpenseSummary extends StatelessWidget {
     required double amount,
     required Color color,
   }) {
-    // Format mata uang
-    final String formattedAmount = "Rp. ${amount.toStringAsFixed(3)}";
+    final formatter = NumberFormat.decimalPattern('id_ID');
+    final String formattedAmount = "Rp ${formatter.format(amount.round())}";
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -35,7 +34,7 @@ class IncomeExpenseSummary extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
-                Icons.expand_less, // Ikon sesuai desain
+                Icons.expand_less,
                 color: Colors.white,
                 size: 20,
               ),
@@ -74,12 +73,12 @@ class IncomeExpenseSummary extends StatelessWidget {
           _buildSummaryItem(
             label: "Income",
             amount: income,
-            color: primaryColor,
+            color: const Color(0xFF07BEB8),
           ),
           _buildSummaryItem(
             label: "Expense",
             amount: expense,
-            color: expenseColor,
+            color: const Color(0xFF2563EB),
           ),
         ],
       ),

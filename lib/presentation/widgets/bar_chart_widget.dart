@@ -4,52 +4,85 @@ import 'dart:math' as math;
 
 class BarChartWidget extends StatelessWidget {
   final List<Map<String, dynamic>> data;
-  final Color primaryColor = const Color(0xFF07BEB8);
-  final Color expenseColor = const Color(0xFF2563EB);
 
   const BarChartWidget({super.key, required this.data});
 
+  static const Color primaryColor = Color(0xFF07BEB8);
+  static const Color expenseColor = Color(0xFF2563EB);
+
   @override
   Widget build(BuildContext context) {
+    // ===============================
+    // CEK DATA KOSONG / SEMUA 0
+    // ===============================
+    final bool hasData = data.any(
+          (e) => (e['income'] ?? 0) > 0 || (e['expense'] ?? 0) > 0,
+    );
+
+    if (!hasData) {
+      return _emptyState();
+    }
+
+    // ===============================
+    // HITUNG MAX VALUE (ANTI NaN)
+    // ===============================
     double maxIncome = 0.0;
     double maxExpense = 0.0;
 
-    for (var item in data) {
-      if (item['income'] > maxIncome) maxIncome = item['income'];
-      if (item['expense'] > maxExpense) maxExpense = item['expense'];
+    for (final item in data) {
+      maxIncome = math.max(maxIncome, (item['income'] ?? 0).toDouble());
+      maxExpense = math.max(maxExpense, (item['expense'] ?? 0).toDouble());
     }
 
-    final double maxVal = math.max(maxIncome, maxExpense) * 1.2;
+    final double rawMax = math.max(maxIncome, maxExpense);
+    final double maxVal = rawMax == 0 ? 1 : rawMax * 1.2;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final double height = constraints.maxHeight;
-        final double barWidth = 10;
+        const double barWidth = 10;
 
         return Stack(
           children: [
-            // Y-Axis Labels and Lines
+            /// ===============================
+            /// Y AXIS GRID
+            /// ===============================
             Positioned.fill(
               child: CustomPaint(
-                painter: _YAxisPainter(maxVal: maxVal, height: height, lines: 4),
+                painter: _YAxisPainter(
+                  maxVal: maxVal,
+                  height: height,
+                  lines: 4,
+                ),
               ),
             ),
-            // Bar Visualization
+
+            /// ===============================
+            /// BAR CHART
+            /// ===============================
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: data.map((item) {
-                final double incomeHeight = (item['income'] / maxVal) * height * 0.8;
-                final double expenseHeight = (item['expense'] / maxVal) * height * 0.8;
+                final double income =
+                (item['income'] ?? 0).toDouble();
+                final double expense =
+                (item['expense'] ?? 0).toDouble();
+
+                final double incomeHeight =
+                ((income / maxVal) * height * 0.8)
+                    .clamp(0.0, height);
+
+                final double expenseHeight =
+                ((expense / maxVal) * height * 0.8)
+                    .clamp(0.0, height);
 
                 return Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        // Bar Pendapatan (Primary Color)
                         Container(
                           width: barWidth,
                           height: incomeHeight,
@@ -59,7 +92,6 @@ class BarChartWidget extends StatelessWidget {
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
-                        // Bar Pengeluaran (Expense Color)
                         Container(
                           width: barWidth,
                           height: expenseHeight,
@@ -70,8 +102,11 @@ class BarChartWidget extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 5), // Jarak ke label hari
-                    Text(item['day'], style: GoogleFonts.poppins(fontSize: 12)),
+                    const SizedBox(height: 6),
+                    Text(
+                      item['day'] ?? '',
+                      style: GoogleFonts.poppins(fontSize: 12),
+                    ),
                   ],
                 );
               }).toList(),
@@ -81,15 +116,44 @@ class BarChartWidget extends StatelessWidget {
       },
     );
   }
+
+  // ===============================
+  // EMPTY STATE UI
+  // ===============================
+  Widget _emptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.bar_chart,
+              size: 42, color: Colors.grey.shade400),
+          const SizedBox(height: 8),
+          Text(
+            "No data available",
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-// Y-Axis Painter untuk garis horizontal dan label Y
+// =======================================================
+// Y AXIS PAINTER (SAFE VERSION)
+// =======================================================
 class _YAxisPainter extends CustomPainter {
   final double maxVal;
   final double height;
   final int lines;
 
-  _YAxisPainter({required this.maxVal, required this.height, required this.lines});
+  _YAxisPainter({
+    required this.maxVal,
+    required this.height,
+    required this.lines,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -103,24 +167,34 @@ class _YAxisPainter extends CustomPainter {
     for (int i = 0; i <= lines; i++) {
       final double y = height - (i * step);
 
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        paint,
+      );
 
       final double value = valueStep * i;
-      String label;
-      if (value < 1) {
-        label = "0";
-      } else if (value < 1000) {
-        label = "${value.round()}k";
-      } else {
-        label = "${(value / 1000).round()}k";
-      }
+      final String label = _formatValue(value);
 
-      TextPainter(
-        text: TextSpan(text: label, style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey)),
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            color: Colors.grey,
+          ),
+        ),
         textDirection: TextDirection.ltr,
-      )..layout(minWidth: 0, maxWidth: 50)
-        ..paint(canvas, Offset(-20, y - 5));
+      )..layout(minWidth: 0, maxWidth: 50);
+
+      textPainter.paint(canvas, Offset(-22, y - 6));
     }
+  }
+
+  String _formatValue(double value) {
+    if (value < 1) return "0";
+    if (value < 1000) return value.round().toString();
+    return "${(value / 1000).round()}k";
   }
 
   @override
