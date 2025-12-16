@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart'; // <<< PASTIKAN INI DIIMPOR
 // Asumsi path ini benar. Jika tidak, sesuaikan.
 import 'package:dompetku/presentation/widgets/date_picker_calender.dart';
 // Asumsi path ini benar. Jika tidak, sesuaikan.
@@ -28,37 +29,44 @@ class _TransactionsPageState extends State<TransactionsPage> {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
-    // FILTER
+    // =====================================================================
+    // ===================== PERBAIKAN LOGIKA FILTER TANGGAL =================
+    // =====================================================================
     final filteredTransactions = provider.transactions.where((t) {
-      // Filter tipe (Income/Expense)
-      bool typeMatch = selectedTab == 0
-          ? t["type"] == "income"
-          : t["type"] != "income";
+      // 1. Filter tipe (Income/Expense)
+      // Tab 0 (Income) mencari type == "income"
+      // Tab 1 (Expense) mencari type != "income"
+      bool typeMatch =
+      selectedTab == 0 ? t["type"] == "income" : t["type"] != "income";
 
       if (!typeMatch) return false;
 
-      // Filter tanggal
+      // 2. Filter tanggal (Hanya dilakukan jika selectedDate tidak null)
       if (selectedDate == null) return true;
 
       final String dateStr = t["date"] ?? "";
       if (dateStr.isEmpty) return false;
 
       try {
-        final parts = dateStr.split('/');
-        if (parts.length != 3) return false;
-        final day = int.parse(parts[0]);
-        final month = int.parse(parts[1]);
-        final year = int.parse(parts[2]);
+        // --- LOGIKA UTAMA PERBAIKAN ---
+        // Format di Firestore Anda adalah: "dd-MM-yyyy" (e.g., "28-11-2025")
+        // Kita menggunakan DateFormat untuk mem-parsing string tanggal dari Firestore.
+        final DateFormat firestoreDateFormat = DateFormat('dd-MM-yyyy');
+        final DateTime transactionDate = firestoreDateFormat.parse(dateStr);
 
-        // Asumsi format tanggal di data adalah 'dd/MM/yyyy'
-        // Jika format berbeda (misal: 'd-M-y'), logika parsing harus disesuaikan.
-        return (selectedDate!.day == day &&
-            selectedDate!.month == month &&
-            selectedDate!.year == year);
-      } catch (_) {
+        // Bandingkan hanya komponen hari, bulan, dan tahun.
+        return (selectedDate!.day == transactionDate.day &&
+            selectedDate!.month == transactionDate.month &&
+            selectedDate!.year == transactionDate.year);
+
+      } catch (e) {
+        // Jika parsing gagal (misalnya, format di Firestore tidak konsisten),
+        // kita anggap transaksi ini tidak cocok.
+        // print("Error parsing date: $dateStr, Error: $e");
         return false;
       }
     }).toList();
+    // =====================================================================
 
     final double statusBarHeight = MediaQuery.of(context).padding.top;
 
@@ -67,20 +75,17 @@ class _TransactionsPageState extends State<TransactionsPage> {
     // ============================================================
     if (isLandscape) {
       return Scaffold(
-        // === PERBAIKAN: Mengganti background Scaffold menjadi LightBackgroundColor ===
-        // Ini mencegah munculnya warna biru saat scrolling atau overscroll.
         backgroundColor: kLightBackgroundColor,
-        // ==========================================================================
         body: SafeArea(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Column(
               children: [
-                // HEADER BIRU (Container ini tetap biru)
+                // HEADER BIRU
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-                  color: kPrimaryColor, // Kontainer ini yang memberi warna biru
+                  color: kPrimaryColor,
                   child: Column(
                     children: [
                       Text(
@@ -130,16 +135,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
                 ),
                 const SizedBox(height: 30),
 
-                // BODY PUTIH (Container ini sudah berada di atas background putih)
+                // BODY PUTIH
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 80), // Padding disesuaikan
-                  // Warna background putih dihilangkan, karena sudah ditangani oleh Scaffold
-                  // Jika ingin mempertahankan efek lekukan di atas, tetap gunakan BoxDecoration
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
                   decoration: const BoxDecoration(
-                    color: kLightBackgroundColor, // Menggunakan warna yang sama dengan Scaffold
-                    // Lekukan dihilangkan karena container ini mengikuti lebar layar
-                    // dan Scaffold sudah putih
+                    color: kLightBackgroundColor,
                   ),
                   child: Column(
                     children: [
@@ -186,6 +187,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
+                              // Format tampilan menggunakan /
                               "Tanggal: ${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
                               style: GoogleFonts.poppins(
                                   fontSize: 14,
@@ -207,16 +209,6 @@ class _TransactionsPageState extends State<TransactionsPage> {
                       const SizedBox(height: 20),
 
                       // LIST TRANSAKSI
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: filteredTransactions.length,
-                        itemBuilder: (context, index) {
-                          return _transactionItem(
-                              filteredTransactions[index], provider);
-                        },
-                      ),
-
                       if (filteredTransactions.isEmpty)
                         Center(
                           child: Padding(
@@ -228,6 +220,16 @@ class _TransactionsPageState extends State<TransactionsPage> {
                                   fontWeight: FontWeight.w600),
                             ),
                           ),
+                        )
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: filteredTransactions.length,
+                          itemBuilder: (context, index) {
+                            return _transactionItem(
+                                filteredTransactions[index], provider);
+                          },
                         ),
                     ],
                   ),
@@ -363,6 +365,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
+                              // Format tampilan menggunakan /
                               "Tanggal: ${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
@@ -379,8 +382,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                         ),
                       ),
 
-                    // Mengganti SizedBox dengan properti height statis
-                    // menjadi penyesuaian yang lebih dinamis untuk List/Pesan Kosong
+                    // LIST TRANSAKSI / PESAN KOSONG
                     filteredTransactions.isEmpty
                         ? Center(
                       child: Padding(
@@ -396,7 +398,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                         : ListView.builder(
                       itemCount: filteredTransactions.length,
                       shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(), // Diubah menjadi NeverScrollableScrollPhysics karena sudah di dalam SingleChildScrollView
+                      physics: const NeverScrollableScrollPhysics(),
                       itemBuilder: (context, index) {
                         final t = filteredTransactions[index];
                         return _transactionItem(t, provider);
@@ -436,10 +438,18 @@ class _TransactionsPageState extends State<TransactionsPage> {
     final String description = t["description"] ?? "-";
     final String date = t["date"] ?? "-";
 
-    // === MENGGUNAKAN LOGIKA IKON ANDA ===
+    // Opsional: Format ulang tanggal untuk tampilan (dari dd-MM-yyyy ke dd/MM)
+    String displayDate = date;
+    try {
+      final parsedDate = DateFormat('dd-MM-yyyy').parse(date);
+      displayDate = DateFormat('dd/MM/yyyy').format(parsedDate);
+    } catch (_) {
+      // Biarkan displayDate tetap date string jika parsing gagal
+    }
+
+
     final IconData icon =
     isIncome ? Icons.attach_money : Icons.shopping_bag_outlined;
-    // ===================================
 
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -462,9 +472,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
             decoration: BoxDecoration(
                 color: kLightBackgroundColor,
                 borderRadius: BorderRadius.circular(10)),
-            // === MENGGUNAKAN VARIABEL IKON ===
             child: Icon(icon, color: kPrimaryColor),
-            // ===============================
           ),
           const SizedBox(width: 15),
 
@@ -480,7 +488,7 @@ class _TransactionsPageState extends State<TransactionsPage> {
                   ),
                 ),
                 Text(
-                  date,
+                  displayDate, // Menggunakan displayDate yang sudah diformat
                   style: GoogleFonts.poppins(
                     color: Colors.grey,
                     fontSize: 12,
