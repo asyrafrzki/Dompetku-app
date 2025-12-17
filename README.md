@@ -1,16 +1,35 @@
-# dompetku
+# DompetKu 💸📊
+Aplikasi manajemen keuangan untuk membantu mahasiswa mengatur pemasukan, pengeluaran, dan target tabungan secara lebih disiplin dan terencana.
 
-A new Flutter project.
+---
 
-## Getting Started
+## Overview
+**DompetKu** adalah aplikasi manajemen keuangan yang dirancang untuk membantu mahasiswa dalam mengatur keuangan pribadi secara efektif. Aplikasi ini berfungsi sebagai alat pencatat pemasukan dan pengeluaran harian agar pengguna dapat memahami kondisi finansialnya dengan jelas.
 
-This project is a starting point for a Flutter application.
+Melalui DompetKu, mahasiswa dapat mengelola uang saku, mengontrol pengeluaran, serta menetapkan target tabungan sesuai kebutuhan. Aplikasi ini juga dilengkapi dengan fitur **grafik analisis keuangan**, **pengingat transaksi**, dan **laporan bulanan otomatis**.
 
-A few resources to get you started if this is your first Flutter project:
+DompetKu diharapkan menjadi solusi digital yang membantu mahasiswa lebih disiplin mengatur keuangan. Aplikasi ini bukan hanya alat pencatat, tetapi juga pendamping finansial untuk membentuk kebiasaan pengelolaan uang yang lebih baik dan bertanggung jawab.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Fitur Utama
+- ✅ Pencatatan **pemasukan** & **pengeluaran** harian
+- ✅ Manajemen **kategori transaksi**
+- ✅ **Ringkasan keuangan** (overview kondisi finansial)
+- ✅ **Grafik analisis** keuangan
+- ✅ **Pengingat transaksi**
+- ✅ **Laporan bulanan otomatis**
+- ✅ Target **tabungan / goals** (jika digunakan pada project kamu)
+
+---
+
+## Link Release Android & SRS
+📦 **Google Drive (Release Android + SRS + file pendukung):**  
+https://drive.google.com/drive/folders/1qsmcGt9fBeBtwJwuF_EUdbUsOek23JM_
+
+---
+
+## Instalasi
+1.clone repo ini = git clone https://github.com/asyrafrzki/Dompetku-app.git
+2.cd Dompetku-app
+3.jalankan flutter pub get
