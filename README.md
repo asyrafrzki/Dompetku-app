@@ -25,7 +25,7 @@ DompetKu diharapkan menjadi solusi digital yang membantu mahasiswa lebih disipli
 
 ## Link Release Android & SRS
 📦 **Google Drive (Release Android + SRS + file pendukung):**  
-https://drive.google.com/drive/folders/1qsmcGt9fBeBtwJwuF_EUdbUsOek23JM_
+https://drive.google.com/drive/folders/1qsmcGt9fBeBtwJwuF_EUdbUsOek23JM_?usp=sharing
 
 ---
 
