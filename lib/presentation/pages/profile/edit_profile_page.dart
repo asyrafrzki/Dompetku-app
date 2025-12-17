@@ -3,13 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:dompetku/providers/profile_provider.dart';
 
-// ================== WARNA ==================
+//warna
 const Color actionColor = Color(0xFF07BEB8);
 const Color backgroundColor = Color(0xFFF8FFF2);
 const Color inputFieldColor = Color(0xFFE0F4F2);
 const Color errorColor = Colors.red;
 
-// ================== SNACKBAR ==================
 void _showSnackBar(
     BuildContext context,
     String title,
@@ -71,7 +70,6 @@ void _showSnackBar(
   );
 }
 
-// ================== INPUT FIELD ==================
 class _ProfileInputField extends StatelessWidget {
   final String title;
   final String hintText;
@@ -124,7 +122,6 @@ class _ProfileInputField extends StatelessWidget {
   }
 }
 
-// ================== HEADER (FIX OVERFLOW LANDSCAPE) ==================
 class _EditProfileHeader extends StatelessWidget {
   final String userName;
 
@@ -134,8 +131,6 @@ class _EditProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
-
-    // Tinggi landscape jangan kekecilan (biar aman dari overflow)
     final double height = isLandscape ? 190 : 260;
 
     return Container(
@@ -176,7 +171,7 @@ class _EditProfileHeader extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 48), // biar center bener
+                  const SizedBox(width: 48),
                 ],
               ),
 
@@ -211,7 +206,6 @@ class _EditProfileHeader extends StatelessWidget {
   }
 }
 
-// ================== PAGE ==================
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
 

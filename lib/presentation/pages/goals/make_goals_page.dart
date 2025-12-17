@@ -10,7 +10,7 @@ class MakeGoalsPage extends StatefulWidget {
   @override
   State<MakeGoalsPage> createState() => _MakeGoalsPageState();
 }
-
+//menangkap inputan user
 class _MakeGoalsPageState extends State<MakeGoalsPage> {
   final _formKey = GlobalKey<FormState>();
 
@@ -24,7 +24,7 @@ class _MakeGoalsPageState extends State<MakeGoalsPage> {
   bool saving = false;
 
   Color get primary => const Color(0xFF07BEB8);
-
+//default hari sekarang
   @override
   void initState() {
     super.initState();
@@ -40,7 +40,7 @@ class _MakeGoalsPageState extends State<MakeGoalsPage> {
       builder: (_) => const DatePickerCalendar(),
     );
   }
-
+//validasi form
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -71,7 +71,7 @@ class _MakeGoalsPageState extends State<MakeGoalsPage> {
         "endDate": endC.text.trim(),
         "createdAt": FieldValue.serverTimestamp(),
       });
-
+//jika sukses
       if (mounted) Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

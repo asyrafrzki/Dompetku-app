@@ -19,7 +19,7 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const DashboardContent(), // Konten Dashboard
+    const DashboardContent(),
     const AnalyticsPage(),
     const TransactionsPage(),
     const CategoriesPage(),
@@ -40,7 +40,6 @@ class _HomePageState extends State<HomePage> {
         children: _pages,
       ),
 
-      // ===================== WIDGET BOTTOM NAV BAR ===================== //
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,

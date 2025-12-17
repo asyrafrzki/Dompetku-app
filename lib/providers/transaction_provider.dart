@@ -15,9 +15,6 @@ class TransactionProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // ===============================
-  // LIST TRANSACTIONS (REALTIME) - KHUSUS TRANSAKSI (BUKAN GOAL PROGRESS)
-  // ===============================
   List<Map<String, dynamic>> transactions = [];
 
   TransactionProvider() {
@@ -27,7 +24,7 @@ class TransactionProvider with ChangeNotifier {
   void loadTransactions() {
     final user = _auth.currentUser;
     if (user == null) return;
-
+//ambil data dari firestore
     _firestore
         .collection("users")
         .doc(user.uid)
@@ -35,22 +32,18 @@ class TransactionProvider with ChangeNotifier {
         .orderBy("timestamp", descending: true)
         .snapshots()
         .listen((snapshot) {
-      // FILTER: buang goal_progress dari list transaksi
       transactions = snapshot.docs
           .map((doc) => {
         "id": doc.id,
         ...doc.data() as Map<String, dynamic>,
       })
-          .where((t) => t["type"] != "goal_progress" && t["isGoals"] != true)
+          .where((t) => t["type"] != "goal_progress" && t["isGoals"] != true) //bukan goals
           .toList();
 
       notifyListeners();
     });
   }
 
-  // ===============================
-  // FORMAT CURRENCY
-  // ===============================
   String formatCurrency(double number) {
     final formatter = NumberFormat.currency(
       locale: "id_ID",
@@ -60,9 +53,6 @@ class TransactionProvider with ChangeNotifier {
     return formatter.format(number);
   }
 
-  // ===============================
-  // TOTAL BALANCE (HANYA TRANSAKSI)
-  // ===============================
   double get totalBalance {
     double sum = 0;
     for (var t in transactions) {
@@ -76,9 +66,6 @@ class TransactionProvider with ChangeNotifier {
     return sum;
   }
 
-  // ===============================
-  // TOTAL INCOME (HANYA TRANSAKSI)
-  // ===============================
   double get totalIncome {
     double sum = 0;
     for (var t in transactions) {
@@ -89,9 +76,6 @@ class TransactionProvider with ChangeNotifier {
     return sum;
   }
 
-  // ===============================
-  // TOTAL EXPENSE BY CATEGORY
-  // ===============================
   double totalExpenseForCategory(String category) {
     double sum = 0;
     for (var t in transactions) {
@@ -102,9 +86,6 @@ class TransactionProvider with ChangeNotifier {
     return sum;
   }
 
-  // ===============================
-  // TOTAL INCOME BY CATEGORY
-  // ===============================
   double totalIncomeForCategory(String category) {
     double sum = 0;
     for (var t in transactions) {
@@ -115,16 +96,12 @@ class TransactionProvider with ChangeNotifier {
     return sum;
   }
 
-  // UNIVERSAL TOTAL BY CATEGORY
   double totalForCategory(String category, bool isIncome) {
     return isIncome
         ? totalIncomeForCategory(category)
         : totalExpenseForCategory(category);
   }
 
-  // ===============================
-  // SAVE (TRANSACTION / GOAL PROGRESS)
-  // ===============================
   Future<String?> saveTransaction({
     required String date,
     required String amountString,
@@ -139,8 +116,6 @@ class TransactionProvider with ChangeNotifier {
       _setSaving(false);
       return "Pengguna tidak terautentikasi.";
     }
-
-    // Parsing amount: aman buat "10.000", "10,000", "10000"
     final cleaned = amountString.replaceAll(RegExp(r'[^0-9]'), '');
     final double amount = double.tryParse(cleaned) ?? 0;
 
@@ -151,8 +126,6 @@ class TransactionProvider with ChangeNotifier {
 
     final bool isGoals = category["isGoals"] == true;
     final bool isIncome = category["isIncome"] == true;
-
-    // Tentukan type
     String transactionType = "expense";
     if (isGoals) {
       transactionType = "goal_progress";
@@ -173,9 +146,6 @@ class TransactionProvider with ChangeNotifier {
     };
 
     try {
-      // =========================
-      // CASE 1: GOAL PROGRESS -> SIMPAN KE goals/{goalId}/progress
-      // =========================
       if (isGoals) {
         if (goalId == null || goalId.trim().isEmpty) {
           _setSaving(false);
@@ -189,7 +159,6 @@ class TransactionProvider with ChangeNotifier {
             .doc(goalId)
             .collection("progress")
             .add({
-          // ga perlu isIncome/isGoals kalau kamu mau lebih clean, tapi boleh tetap simpan
           ...data,
           "type": "goal_progress",
         });
@@ -197,10 +166,6 @@ class TransactionProvider with ChangeNotifier {
         _setSaving(false);
         return null;
       }
-
-      // =========================
-      // CASE 2: TRANSAKSI BIASA -> SIMPAN KE transactions
-      // =========================
       await _firestore
           .collection("users")
           .doc(user.uid)

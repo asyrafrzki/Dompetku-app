@@ -8,7 +8,7 @@ import 'package:dompetku/providers/profile_provider.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
-
+//fungsi logout dan langsung ke login page
   void _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
 
@@ -64,7 +64,6 @@ class ProfilePage extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // ITEM LOGOUT
                       _ProfileMenuItem(
                         icon: Icons.logout,
                         title: 'Logout',
@@ -92,18 +91,15 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-// ---------------------- PROFILE HEADER (PERBAIKAN OVERFLOW) ----------------------
 class _ProfileHeader extends StatelessWidget {
   final Color primaryColor;
-  final String userName; // Tambahkan userName
+  final String userName;
 
   const _ProfileHeader({required this.primaryColor, required this.userName});
 
   @override
   Widget build(BuildContext context) {
     final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
-
-    // Batasan Tinggi Maksimal untuk menghindari overflow di landscape
     final double headerMaxHeight = isLandscape ? 200 : MediaQuery.of(context).size.height * 0.35;
 
     return ConstrainedBox(
@@ -126,7 +122,6 @@ class _ProfileHeader extends StatelessWidget {
               ),
             ),
 
-            // Spacer yang dikondisikan
             if (!isLandscape) const Spacer(),
 
             // Konten utama
@@ -152,7 +147,6 @@ class _ProfileHeader extends StatelessWidget {
   }
 }
 
-// ---------------------- PROFILE MENU ITEM ----------------------
 class _ProfileMenuItem extends StatelessWidget {
   final IconData icon;
   final String title;

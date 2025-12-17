@@ -11,11 +11,13 @@ class SignUpPage extends StatefulWidget {
   State<SignUpPage> createState() => _SignUpPageState();
 }
 
+//mengambil inputan user
 class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  //instansiasi firebase dan simpan akun
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -25,6 +27,7 @@ class _SignUpPageState extends State<SignUpPage> {
     if (!mounted) return;
     setState(() => _isLoading = true);
 
+    //mendaftarkan user ke firebase
     try {
       UserCredential userCredential =
       await _auth.createUserWithEmailAndPassword(
@@ -36,6 +39,7 @@ class _SignUpPageState extends State<SignUpPage> {
           .updateDisplayName(nameController.text.trim());
       await userCredential.user!.reload();
 
+      // data disimpan di firestore
       await _firestore.collection("users").doc(userCredential.user!.uid).set({
         "nama": nameController.text.trim(),
         "email": emailController.text.trim(),
@@ -125,7 +129,6 @@ class _SignUpPageState extends State<SignUpPage> {
 
               const SizedBox(height: 50),
 
-              // LABEL + FIELD NAMA
               buildLabel("Nama Lengkap"),
               TextField(
                 controller: nameController,
@@ -137,7 +140,6 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 20),
 
-              // LABEL + FIELD EMAIL
               buildLabel("Email"),
               TextField(
                 controller: emailController,
@@ -149,7 +151,6 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 20),
 
-              // LABEL + FIELD PASSWORD
               buildLabel("Password"),
               TextField(
                 controller: passwordController,
@@ -163,7 +164,6 @@ class _SignUpPageState extends State<SignUpPage> {
 
               const SizedBox(height: 35),
 
-              // BUTTON SIGN UP (diperkecil)
               Center(
                 child: SizedBox(
                   width: 230,
@@ -193,7 +193,6 @@ class _SignUpPageState extends State<SignUpPage> {
 
               const SizedBox(height: 30),
 
-              // LOGIN NAVIGATION
               Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,

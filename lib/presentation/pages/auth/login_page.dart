@@ -10,11 +10,11 @@ class LoginPage extends StatefulWidget {
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
-
+//menangkap inputan user
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-
+//password di tutup
   bool _isPasswordVisible = false;
 
   final Color primaryColor = const Color(0xFF4F6F52);
@@ -22,6 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   final Color backgroundColor = const Color(0xFFF8FFF2);
   final Color lightActionColor = const Color(0xFF80DEDC);
 
+  //mengambil input
   Future<void> loginUser() async {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -229,8 +230,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               const SizedBox(height: 80),
-
-              // ------------ LOGIN BUTTON (KECIL) ------------
               SizedBox(
                 width: 260,
                 child: ElevatedButton(
@@ -256,7 +255,6 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 20),
 
-              // ------------ SIGN UP BUTTON (KECIL) ------------
               SizedBox(
                 width: 260,
                 child: ElevatedButton(

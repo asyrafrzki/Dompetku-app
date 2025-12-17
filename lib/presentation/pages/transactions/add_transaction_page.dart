@@ -7,7 +7,7 @@ import 'package:dompetku/presentation/widgets/date_picker_calender.dart';
 
 class AddTransactionPage extends StatefulWidget {
   final bool isGoals;
-  final String? goalId; // WAJIB kalau isGoals=true
+  final String? goalId;
   final String? selectedCategoryName;
 
   const AddTransactionPage({
@@ -45,7 +45,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     super.initState();
     dateController.text = _formatDate(DateTime.now());
 
-    // goals harus punya goalId (biar gak ada add goals disini)
+    // goals harus punya goalId
     if (widget.isGoals && (widget.goalId == null || widget.goalId!.isEmpty)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pop(context);

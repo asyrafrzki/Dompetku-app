@@ -30,15 +30,10 @@ class NotificationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Menghapus margin horizontal pada Expanded
-    // dan memindahkan radius ke body utama untuk tampilan yang lebih rapi
-    // menyesuaikan layout standar aplikasi.
-
     return Scaffold(
-      backgroundColor: kPrimaryColor, // Background utama biru
+      backgroundColor: kPrimaryColor,
       body: Column(
         children: [
-          // =================== HEADER ====================== //
           Container(
             width: double.infinity,
             padding: EdgeInsets.fromLTRB(
@@ -74,7 +69,6 @@ class NotificationPage extends StatelessWidget {
             ),
           ),
 
-          // =================== BODY NOTIFICATION LIST ====================== //
           Expanded(
             child: Container(
               width: double.infinity,
@@ -141,9 +135,6 @@ class NotificationPage extends StatelessWidget {
   }
 }
 
-// ====================================================
-// WIDGET ITEM NOTIFIKASI
-// ====================================================
 class _NotificationItem extends StatelessWidget {
   final Map<String, dynamic> data;
 

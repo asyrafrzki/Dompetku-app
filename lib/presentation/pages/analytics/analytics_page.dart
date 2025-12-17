@@ -5,7 +5,6 @@ import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-
 import 'package:dompetku/presentation/widgets/custom_page_header.dart';
 import 'package:dompetku/presentation/widgets/income_expense_summary.dart';
 import 'package:dompetku/presentation/widgets/bar_chart_widget.dart';
@@ -24,11 +23,9 @@ class AnalyticsPage extends StatefulWidget {
 class _AnalyticsPageState extends State<AnalyticsPage> {
   final User? _currentUser = FirebaseAuth.instance.currentUser;
   int _selectedTimeFrame = 0; // 0=Daily, 1=Weekly, 2=Monthly
-
-  // Data State dan Chart Data (Dihapus karena diganti data real-time)
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-
+//set default tanggal sekarang
   @override
   void initState() {
     super.initState();
@@ -41,10 +38,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     });
   }
 
-  // ====================================================
-  // LOGIKA WAKTU & DATABASE
-  // ====================================================
-
   /// Menghitung tanggal awal dan akhir untuk query database
   Map<String, DateTime> _getTimeFrame() {
     final now = DateTime.now();
@@ -52,7 +45,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     DateTime endDate;
 
     switch (_selectedTimeFrame) {
-      case 0: // Daily -> Untuk Bar Chart, kita tampilkan Weekly agar ada perbandingan
+      case 0: // Daily
         return _getTimeFrameForWeekly();
 
       case 1: // Weekly
@@ -60,7 +53,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
       case 2: // Monthly
         startDate = DateTime(now.year, now.month, 1);
-        // Akhir bulan (1 milidetik sebelum awal bulan berikutnya)
+        // Akhir bulan
         endDate = DateTime(now.year, now.month + 1, 1).subtract(const Duration(milliseconds: 1));
         break;
       default:
@@ -72,10 +65,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
   Map<String, DateTime> _getTimeFrameForWeekly() {
     final now = DateTime.now();
-    // Cari hari Senin (weekday 1) di minggu ini
+    // Cari hari Senin di minggu ini
     final daysToSubtract = now.weekday - 1;
     final startDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: daysToSubtract));
-    // Akhir hari Minggu (1 milidetik sebelum hari Senin minggu depan)
+    // Akhir hari Minggu
     final endDate = startDate.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
     return {'start': startDate, 'end': endDate};
   }
@@ -99,10 +92,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         .snapshots();
   }
 
-  // ====================================================
-  // LOGIKA AGREGASI DATA UNTUK CHART
-  // ====================================================
-
   List<Map<String, dynamic>> _aggregateChartData(List<QueryDocumentSnapshot> transactions) {
     final Map<String, double> incomeMap = {};
     final Map<String, double> expenseMap = {};
@@ -111,10 +100,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     // Tentukan format key untuk agregasi (Day Name/Month Name)
     String getGroupingKey(DateTime date) {
       if (_selectedTimeFrame == 2) { // Monthly
-        return DateFormat('MMM').format(date); // Contoh: Jan, Feb
+        return DateFormat('MMM').format(date);
       }
       // Weekly/Daily -> Grouping by Day Name
-      return DateFormat('E').format(date); // Contoh: Mon, Tue
+      return DateFormat('E').format(date);
     }
 
     // Hitung total per group
@@ -164,10 +153,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     return result;
   }
 
-  // ====================================================
-  // WIDGET UTAMA
-  // ====================================================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -186,7 +171,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           double currentIncome = 0.0;
           double currentExpense = 0.0;
 
-          // 1. HITUNG TOTAL INCOME & EXPENSE (Untuk Summary Card)
+          // total income
           for (var doc in transactions) {
             final data = doc.data() as Map<String, dynamic>;
             final double amount = (data['amount'] ?? 0).toDouble();
@@ -199,7 +184,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             }
           }
 
-          // 2. AGREGASI DATA UNTUK CHART
+          //chart
           final List<Map<String, dynamic>> aggregatedChartData =
           _aggregateChartData(transactions);
 
@@ -255,7 +240,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
 
                 const SizedBox(height: 30),
 
-                // Card Utama Analisis (Chart dan Summary)
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Container(
@@ -285,11 +269,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         const SizedBox(height: 20),
                         SizedBox(
                           height: 200,
-                          // MENGGUNAKAN DATA REAL-TIME AGREGASI
                           child: BarChartWidget(data: aggregatedChartData),
                         ),
                         const SizedBox(height: 40),
-                        // MENGGUNAKAN DATA TOTAL REAL-TIME
                         IncomeExpenseSummary(
                           income: currentIncome,
                           expense: currentExpense,
@@ -307,7 +289,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
-  // Logika dialog kalender (dibiarkan di sini)
   void _showCalendarDialog(BuildContext context) {
     showDialog(
       context: context,

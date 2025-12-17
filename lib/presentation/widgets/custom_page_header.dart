@@ -17,7 +17,6 @@ class CustomPageHeader extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      // Padding disesuaikan
       padding: const EdgeInsets.fromLTRB(28, 60, 28, 40),
       decoration: const BoxDecoration(
         color: primaryColor,
@@ -28,10 +27,6 @@ class CustomPageHeader extends StatelessWidget {
       ),
       child: Stack(
         children: [
-
-
-
-          // Judul Halaman
           Center(
             child: Text(
               title,

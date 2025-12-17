@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:dompetku/providers/transaction_provider.dart';
 import 'package:dompetku/presentation/pages/transactions/add_transaction_page.dart';
 import 'package:dompetku/presentation/pages/goals/make_goals_page.dart';
-
-// ✅ pakai dialog delete buatan kamu
 import 'package:dompetku/presentation/widgets/delete_confirmation_dialog.dart';
 
 class TransactionListPage extends StatelessWidget {
@@ -63,7 +59,6 @@ class TransactionListPage extends StatelessWidget {
         ],
       ),
 
-      // ✅ Goals: no bottom button, kategori lain: Add
       bottomNavigationBar: isGoalsPage
           ? null
           : Container(
@@ -102,9 +97,6 @@ class TransactionListPage extends StatelessWidget {
   }
 }
 
-// ==============================
-// HEADER
-// ==============================
 class _HeaderSection extends StatelessWidget {
   final Color primaryColor;
   final String title;
@@ -185,9 +177,6 @@ class _HeaderSection extends StatelessWidget {
   }
 }
 
-// ==============================
-// BODY: TRANSACTIONS (kategori lain)
-// ==============================
 class _TransactionsBody extends StatelessWidget {
   final Color primaryColor;
   final String categoryName;
@@ -332,7 +321,6 @@ class _TransactionItem extends StatelessWidget {
             ]),
           ),
 
-          // ✅ amount + tombol hapus di sampingnya
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -360,9 +348,6 @@ class _TransactionItem extends StatelessWidget {
   }
 }
 
-// ==============================
-// GOALS BODY
-// ==============================
 class GoalsBody extends StatefulWidget {
   final Color primaryColor;
   const GoalsBody({super.key, required this.primaryColor});
@@ -432,7 +417,8 @@ class _GoalsBodyState extends State<GoalsBody> {
         List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(snap.data!.docs);
 
         if (goalsDocs.isEmpty) {
-          return Column(
+          return ListView(
+            padding: EdgeInsets.zero,
             children: [
               const SizedBox(height: 6),
               _infoCard(
@@ -461,9 +447,11 @@ class _GoalsBodyState extends State<GoalsBody> {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
             ],
           );
         }
+
 
         selectedGoalId ??= goalsDocs.first.id;
 
@@ -489,16 +477,16 @@ class _GoalsBodyState extends State<GoalsBody> {
           toFirestore: (m, _) => m,
         )
             .snapshots();
-
+//ambil data dari firestore goals
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: progressStream,
           builder: (context, psnap) {
-            if (!psnap.hasData) return const Center(child: CircularProgressIndicator());
+            if (!psnap.hasData) return const Center(child: CircularProgressIndicator()); //load jika data belum ada
 
             final pdocs =
-            List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(psnap.data!.docs);
+            List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(psnap.data!.docs); //ambil dokumen
 
-            num saved = 0;
+            num saved = 0; //bisa int bisa double
             for (final d in pdocs) {
               saved += (d.data()["amount"] ?? 0) as num;
             }
@@ -549,7 +537,6 @@ class _GoalsBodyState extends State<GoalsBody> {
 
                 const SizedBox(height: 14),
 
-                // card goal + dropdown + add progress
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -707,7 +694,6 @@ class _GoalsBodyState extends State<GoalsBody> {
                           ]),
                         ),
 
-                        // ✅ amount + tombol hapus progress pakai dialog kamu
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

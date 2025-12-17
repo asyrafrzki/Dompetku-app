@@ -8,7 +8,7 @@ class DeleteConfirmationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF07BEB8);
-    const Color deleteColor = Color(0xFFD32F2F); // Merah untuk tombol delete
+    const Color deleteColor = Color(0xFFD32F2F);
 
     return AlertDialog(
       shape: RoundedRectangleBorder(

@@ -12,9 +12,7 @@ class BarChartWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ===============================
-    // CEK DATA KOSONG / SEMUA 0
-    // ===============================
+    //cek data kosong
     final bool hasData = data.any(
           (e) => (e['income'] ?? 0) > 0 || (e['expense'] ?? 0) > 0,
     );
@@ -23,9 +21,6 @@ class BarChartWidget extends StatelessWidget {
       return _emptyState();
     }
 
-    // ===============================
-    // HITUNG MAX VALUE (ANTI NaN)
-    // ===============================
     double maxIncome = 0.0;
     double maxExpense = 0.0;
 
@@ -44,9 +39,6 @@ class BarChartWidget extends StatelessWidget {
 
         return Stack(
           children: [
-            /// ===============================
-            /// Y AXIS GRID
-            /// ===============================
             Positioned.fill(
               child: CustomPaint(
                 painter: _YAxisPainter(
@@ -57,9 +49,6 @@ class BarChartWidget extends StatelessWidget {
               ),
             ),
 
-            /// ===============================
-            /// BAR CHART
-            /// ===============================
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -117,9 +106,6 @@ class BarChartWidget extends StatelessWidget {
     );
   }
 
-  // ===============================
-  // EMPTY STATE UI
-  // ===============================
   Widget _emptyState() {
     return Center(
       child: Column(
@@ -141,9 +127,6 @@ class BarChartWidget extends StatelessWidget {
   }
 }
 
-// =======================================================
-// Y AXIS PAINTER (SAFE VERSION)
-// =======================================================
 class _YAxisPainter extends CustomPainter {
   final double maxVal;
   final double height;

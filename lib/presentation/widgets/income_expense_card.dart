@@ -6,7 +6,7 @@ class IncomeExpenseCard extends StatelessWidget {
 
   // Fungsi pembantu untuk kotak metrik tunggal
   Widget _incomeMetricBox(String title, String value, bool isExpense) {
-    // Tentukan warna (Hijau untuk Income, Merah/Custom untuk Expense)
+    // Tentukan warna (Hijau untuk Income, Merah untuk Expense)
     final Color color = isExpense ? Colors.red : Colors.green;
 
     return Column(

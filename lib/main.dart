@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart'; // Sesuaikan jika nama file berbeda
-
+import 'firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'package:dompetku/providers/profile_provider.dart';
-import 'package:dompetku/providers/transaction_provider.dart'; // WAJIB: Import TransactionProvider
-
-import 'package:dompetku/presentation/pages/splash/splash_screen.dart'; // Ganti jika path splash screen berbeda
+import 'package:dompetku/providers/transaction_provider.dart';
+import 'package:dompetku/presentation/pages/splash/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,9 +16,7 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
-        // Daftarkan ProfileProvider
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
-        // Daftarkan TransactionProvider (INI SOLUSI FIX ERROR PROVIDER)
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
       ],
       child: const MyApp(),

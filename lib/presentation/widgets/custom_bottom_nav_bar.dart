@@ -15,7 +15,7 @@ class CustomBottomNavBar extends StatelessWidget {
     return Container(
       height: 80,
       decoration: const BoxDecoration(
-        color: Color(0xFF07BEB8), // Warna tema biru kehijauan
+        color: Color(0xFF07BEB8),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(53),
           topRight: Radius.circular(53),
@@ -28,7 +28,7 @@ class CustomBottomNavBar extends StatelessWidget {
             Icons.home, // Home
             Icons.bar_chart, // Analytics
             Icons.swap_horiz, // Transactions
-            Icons.layers, // Categories (Asumsi)
+            Icons.layers, // Categories
             Icons.person // Profile
           ];
 

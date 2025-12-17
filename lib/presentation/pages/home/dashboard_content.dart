@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-
 import 'package:dompetku/presentation/pages/notification/notification_page.dart';
 import 'package:dompetku/presentation/widgets/time_frame_button.dart';
 
@@ -21,14 +20,8 @@ class DashboardContent extends StatefulWidget {
 class _DashboardContentState extends State<DashboardContent> {
   int _selectedTab = 0;
   final User? _currentUser = FirebaseAuth.instance.currentUser;
-
-  // Variabel untuk menyimpan Total Income dan Expense yang difilter
   double _totalIncomeFiltered = 0.0;
   double _totalExpenseFiltered = 0.0;
-
-  // ====================================================
-  // 1. LOGIKA WAKTU
-  // ====================================================
 
   Map<String, DateTime> _getTimeFrame() {
     final now = DateTime.now();
@@ -55,11 +48,7 @@ class _DashboardContentState extends State<DashboardContent> {
     }
     return {'start': startDate, 'end': endDate};
   }
-
-  // ====================================================
-  // 2. LOGIKA DATABASE FIREBASE
-  // ====================================================
-
+  //firestore
   Stream<QuerySnapshot> _getTransactionStream() {
     if (_currentUser == null) {
       return const Stream.empty();
@@ -79,24 +68,14 @@ class _DashboardContentState extends State<DashboardContent> {
         .snapshots();
   }
 
-  // ====================================================
-  // 3. WIDGET UTAMA
-  // ====================================================
-
   @override
   Widget build(BuildContext context) {
     final String userName = _currentUser?.displayName ?? _currentUser?.email ?? "User";
     final double statusBarHeight = MediaQuery.of(context).padding.top;
 
     final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
-
-    // Tinggi Bottom Navigation Bar (asumsi 56.0) + padding bottom safe area
     const double bottomNavBarDefaultHeight = 56.0;
     final double bottomSafePadding = MediaQuery.of(context).padding.bottom;
-
-    // =========================================================
-    // WIDGET KONTEN PUTIH (dipisahkan agar mudah digunakan)
-    // =========================================================
     Widget whiteContent(double bottomPadding) {
       return Container(
         color: kLightBackgroundColor,
@@ -176,7 +155,6 @@ class _DashboardContentState extends State<DashboardContent> {
 
                   final transactions = snapshot.data?.docs ?? [];
 
-                  // LOGIKA PENGHITUNGAN TOTAL BARU
                   double currentIncome = 0.0;
                   double currentExpense = 0.0;
 
@@ -229,9 +207,6 @@ class _DashboardContentState extends State<DashboardContent> {
       );
     }
 
-    // =========================================================
-    // WIDGET HEADER BIRU (dipisahkan agar mudah digunakan)
-    // =========================================================
     Widget blueHeader(double topPadding, double bottomPadding) {
       return Container(
         width: double.infinity,
@@ -285,38 +260,20 @@ class _DashboardContentState extends State<DashboardContent> {
         ),
       );
     }
-
-
-    // =========================================================
-    // 4. PEMILIHAN LAYOUT BERDASARKAN ORIENTASI
-    // =========================================================
-
     if (isLandscape) {
-      // === LAYOUT LANDSCAPE: SingleChildScrollView menyeluruh ===
       return SingleChildScrollView(
         child: Column(
           children: [
-            // Perbaikan 2 (Landscape): Top Padding hanya 5. Lebih rapat ke atas.
             blueHeader(5, 0),
-
-            // Jarak Vertikal yang nyaman antara Header dan konten putih (bisa 0 jika ingin mepet)
             const SizedBox(height: 20),
-
-            // Konten Putih dengan padding bawah ekstra
             whiteContent(bottomNavBarDefaultHeight + bottomSafePadding + 20),
           ],
         ),
       );
     }
-
-    // === LAYOUT PORTRAIT (FINAL) ===
-    // Perbaikan 1 (Portrait): Hapus SafeArea di sini agar Header Biru mengisi penuh area status bar
     return Column(
       children: [
-        // Top Padding: statusBarHeight + 10 (Agar Header Biru menutupi seluruh status bar dan ada padding ke bawah)
-        // Bottom Padding: 25 (Dikurangi dari 40 agar kartu Income/Expense naik sedikit)
         blueHeader(statusBarHeight + 10, 25),
-
         Expanded(
             child: whiteContent(100)
         ),
@@ -325,9 +282,6 @@ class _DashboardContentState extends State<DashboardContent> {
   }
 }
 
-// ====================================================
-// WIDGET ITEM TRANSAKSI
-// ====================================================
 class _TransactionListItem extends StatelessWidget {
   final Map<String, dynamic> data;
   final Color primaryColor;
@@ -407,11 +361,6 @@ class _TransactionListItem extends StatelessWidget {
     );
   }
 }
-
-
-// ====================================================
-// WIDGET INCOME EXPENSE CARD (CUSTOM)
-// ====================================================
 
 class _IncomeExpenseCard extends StatelessWidget {
   final double totalIncome;

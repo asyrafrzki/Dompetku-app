@@ -8,6 +8,7 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
+//animasi logo dari atas
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   double _logoOffset = -200.0;
@@ -45,9 +46,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    // Jika _textController tidak dihapus dari State, pastikan ini ada.
-    // Jika sudah dihapus dari State, baris ini bisa dihilangkan.
-    // _textController.dispose();
     super.dispose();
   }
 

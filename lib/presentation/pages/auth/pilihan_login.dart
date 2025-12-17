@@ -46,11 +46,10 @@ class PilihanLogin extends StatelessWidget {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  // Warna tombol Log In: 07BEB8
+                  //tombol login
                   backgroundColor: const Color(0xFF07BEB8),
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
-                    // Bentuk bulat
                     borderRadius: BorderRadius.circular(30),
                   ),
                   elevation: 5,
@@ -68,7 +67,7 @@ class PilihanLogin extends StatelessWidget {
 
               const SizedBox(height: 15),
 
-              // Tombol Sign Up (Warna: 07BEB8, Bentuk: Bulat)
+              // Tombol Sign Up
               OutlinedButton(
                 onPressed: () {
                   Navigator.push(
@@ -78,10 +77,8 @@ class PilihanLogin extends StatelessWidget {
                 },
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
-                  // Border Side: 07BEB8
                   side: const BorderSide(color: Color(0xFF07BEB8), width: 1.5),
                   shape: RoundedRectangleBorder(
-                    // Bentuk bulat
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),

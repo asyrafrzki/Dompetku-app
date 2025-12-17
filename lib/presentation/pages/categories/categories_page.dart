@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// Import halaman tujuan setelah kategori ditekan
 import 'package:dompetku/presentation/pages/transactions/transaction_list_page.dart';
 
 class CategoriesPage extends StatelessWidget {
@@ -18,7 +17,7 @@ class CategoriesPage extends StatelessWidget {
       {'name': 'Others', 'icon': Icons.more_horiz, 'isIncome': false},
     ];
 
-    // Warna utama dari UI Anda
+    // Warna
     const Color primaryColor = Color(0xFF07BEB8);
     const Color secondaryColor = Color(0xFFF8FFF2);
 
@@ -28,7 +27,7 @@ class CategoriesPage extends StatelessWidget {
         builder: (context, orientation) {
           final isLandscape = orientation == Orientation.landscape;
 
-          // ✅ hanya beda di landscape
+          //landscape
           final double headerTopSpace = isLandscape ? 10 : 60;
           final double headerBottomSpace = isLandscape ? 16 : 90;
           final int crossAxisCount = isLandscape ? 4 : 3;
@@ -36,7 +35,6 @@ class CategoriesPage extends StatelessWidget {
 
           return Column(
             children: [
-              // Header dengan Teks "Categories"
               SizedBox(height: headerTopSpace),
               Padding(
                 padding: EdgeInsets.only(
@@ -57,7 +55,6 @@ class CategoriesPage extends StatelessWidget {
 
               Expanded(
                 child: Container(
-                  // Container besar di bawah header
                   decoration: const BoxDecoration(
                     color: secondaryColor,
                     borderRadius: BorderRadius.only(
@@ -66,8 +63,6 @@ class CategoriesPage extends StatelessWidget {
                     ),
                   ),
 
-                  // ✅ portrait: tetap GridView seperti kamu
-                  // ✅ landscape: bungkus scroll supaya bisa geser kebawah
                   padding: const EdgeInsets.only(top: 40, left: 20, right: 20, bottom: 20),
                   child: isLandscape
                       ? SingleChildScrollView(
